@@ -16,7 +16,7 @@ gun, add puzzle game mechanics from Portal and there you go. And if that
 wasn't crazy enough, play 4-player coop, with everyone having their own Portal
 gun!
 
-# Features
+## Features
 
  - Complete recreation of SMB
  - Elements from Portal
@@ -33,7 +33,7 @@ http://stabyourself.net/mari0/
 
 ## License
 
-Maurice GuÈgan and Saöo Smolej
+Maurice Gu√©gan and Sa≈°o Smolej
 
 Licensed under BY-NC-SA 3.0
 http://creativecommons.org/licenses/by-nc-sa/3.0/
