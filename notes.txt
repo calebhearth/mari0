@@ -1,0 +1,2 @@
+reset mappacks
+star music
