@@ -85,10 +85,10 @@ entitylist = {
 	"castlefirecw",
 	"lakitoend",
 	"notgate",
-	"",
-	"",
-	"",
-	"",
+	"geltop",
+	"gelleft",
+	"gelbottom",
+	"gelright",
 	"firestart",
 	"bowser",
 	"axe",
@@ -180,18 +180,18 @@ entitydescriptions = {
 	"place anywhere - will send on signal for a duration - right click to set duration", --"timer",
 	"place on empty tile - beetle - runs fast and resists fireballs", --"beetle",
 	"place on empty tile - beetle - more to the right", --"beetlehalf",
-	"place on empty tile - red flying koopa - will turn around at an edge", --"kooparedflying",
-	"place on empty tile - green flying koopa ", --"koopaflying",
+	"place on empty tile - red flying koopa, goes up and down", --"kooparedflying",
+	"place on empty tile - green flying koopa, jumps around", --"koopaflying",
 	"place on wall - counterclockwise rotating fire - right click for length", --"castlefireccw",
 	"place on empty tile - see-saw - right click for see-saw type", --"seesaw",
 	"place on wall - warp pipe - right click for destination world", --"warppipe",
 	"place on wall - clockwise rotating fire - right click for width", --"castlefirecw",
 	"place anywhere - defines a right border for lakito - use with lakito", --"lakitoend",
 	"place anywhere - turns in input around", --notgate
-	"place nowhere - unused",
-	"place nowhere - unused",
-	"place nowhere - unused",
-	"place nowhere - unused",
+	"place on tile - creates gel on this block. 1: blue, 2: orange, 3: white",
+	"place on tile - creates gel on this block. 1: blue, 2: orange, 3: white",
+	"place on tile - creates gel on this block. 1: blue, 2: orange, 3: white",
+	"place on tile - creates gel on this block. 1: blue, 2: orange, 3: white",
 	"place anywhere - fire start - bowser firethings will regularly cross the screen", --"firestart",
 	"place on empty tile preferably on the first block on a bridge with an axe - bowser", --"bowser",
 	"place on empty tile preferably behind a bridge - axe } end of level", --"axe",
@@ -224,6 +224,11 @@ rightclickvalues["castlefirecw"] = {"length", 6, 12}
 rightclickvalues["castlefireccw"] = {"length", 6, 12}
 
 rightclickvalues["mazegate"] = {"gateno", 1, 2, 3, 4, 5}
+
+rightclickvalues["geltop"] = {"gelid", 1, 2, 3}
+rightclickvalues["gelleft"] = {"gelid", 1, 2, 3}
+rightclickvalues["gelbottom"] = {"gelid", 1, 2, 3}
+rightclickvalues["gelright"] = {"gelid", 1, 2, 3}
 
 function entity:init(img, x, y, width, height)
 	self.image = img

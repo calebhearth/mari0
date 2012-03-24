@@ -1,5 +1,5 @@
 function levelscreen_load(reason, i)
-	if reason ~= "sublevel" and testlevel then
+	if reason ~= "sublevel" and reason ~= "vine" and testlevel then
 		marioworld = testlevelworld
 		mariolevel = testlevellevel
 		editormode = true
@@ -13,7 +13,7 @@ function levelscreen_load(reason, i)
 	--check if lives left
 	livesleft = false
 	for i = 1, players do
-		if mariolives[i] > 0 then
+		if mariolivecount == false or mariolives[i] > 0 then
 			livesleft = true
 		end
 	end
@@ -37,7 +37,7 @@ function levelscreen_load(reason, i)
 			if not love.filesystem.exists("mappacks/" .. mappack .. "/" .. marioworld .. "-" .. mariolevel .. ".txt") then
 				gamestate = "mappackfinished"
 				blacktime = gameovertime
-				playsound(princessmusic)
+				music:play("princessmusic")
 			end
 		else
 			checkcheckpoint = true
@@ -57,10 +57,29 @@ function levelscreen_load(reason, i)
 		updatesizes()
 	end
 	
+	if marioworld == 1 or mariolevel == 1 then
+		blacktime = blacktime * 1.5
+	end
+	
 	coinframe = 1
 	
 	love.graphics.setBackgroundColor(0, 0, 0)
 	levelscreentimer = 0
+	
+	--reached worlds
+	local updated = false
+	if not reachedworlds[mappack] then
+		reachedworlds[mappack] = {}
+	end
+	
+	if marioworld ~= "M" and not reachedworlds[mappack][marioworld] then
+		reachedworlds[mappack][marioworld] = true
+		updated = true
+	end
+	
+	if updated then
+		saveconfig()
+	end
 end
 
 function levelscreen_update(dt)
@@ -119,7 +138,42 @@ function levelscreen_draw()
 				
 				love.graphics.draw(skinpuppet[0], x, y, 0, scale, scale)
 				
-				properprint("*  " .. mariolives[i], (width/2*16)*scale-8*scale, y+7*scale)
+				if mariolivecount == false then
+					properprint("*  inf", (width/2*16)*scale-8*scale, y+7*scale)
+				else
+					properprint("*  " .. mariolives[i], (width/2*16)*scale-8*scale, y+7*scale)
+				end
+				
+				if mappack == "smb" and marioworld == 1 and mariolevel == 1 then
+					local s = "remember that you can run with "
+					for i = 1, #controls[1]["run"] do
+						s = s .. controls[1]["run"][i]
+						if i ~= #controls[1]["run"] then
+							s = s .. "-"
+						end
+					end
+					properprint(s, (width/2*16)*scale-string.len(s)*4*scale, 200*scale)
+				end
+				
+				if mappack == "portal" and marioworld == 1 and mariolevel == 1 then
+					local s = "you can remove your portals with "
+					for i = 1, #controls[1]["reload"] do
+						s = s .. controls[1]["reload"][i]
+						if i ~= #controls[1]["reload"] then
+							s = s .. "-"
+						end
+					end
+					properprint(s, (width/2*16)*scale-string.len(s)*4*scale, 190*scale)
+					
+					local s = "you can grab cubes and push buttons with "
+					for i = 1, #controls[1]["use"] do
+						s = s .. controls[1]["use"][i]
+						if i ~= #controls[1]["use"] then
+							s = s .. "-"
+						end
+					end
+					properprint(s, (width/2*16)*scale-string.len(s)*4*scale, 200*scale)
+				end
 			end
 			
 		elseif gamestate == "mappackfinished" then

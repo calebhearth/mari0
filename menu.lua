@@ -43,6 +43,10 @@ function menu_load()
 		continueavailable = true
 	end
 	
+	mariolevel = 1
+	marioworld = 1
+	mariosublevel = 0
+	
 	--load 1-1 as background
 	loadbackground("1-1.txt")
 	
@@ -59,12 +63,12 @@ function menu_update(dt)
 	if mappackscroll then
 		--smooth the scroll
 		if mappackscrollsmooth > mappackscroll then
-			mappackscrollsmooth = mappackscrollsmooth - scrollsmoothrate*dt
+			mappackscrollsmooth = mappackscrollsmooth - (mappackscrollsmooth-mappackscroll)*dt*5-0.1*dt
 			if mappackscrollsmooth < mappackscroll then
 				mappackscrollsmooth = mappackscroll
 			end
 		elseif mappackscrollsmooth < mappackscroll then
-			mappackscrollsmooth = mappackscrollsmooth + scrollsmoothrate*dt
+			mappackscrollsmooth = mappackscrollsmooth - (mappackscrollsmooth-mappackscroll)*dt*5+0.1*dt
 			if mappackscrollsmooth > mappackscroll then
 				mappackscrollsmooth = mappackscroll
 			end
@@ -74,12 +78,12 @@ function menu_update(dt)
 	if onlinemappackscroll then
 		--smooth the scroll
 		if onlinemappackscrollsmooth > onlinemappackscroll then
-			onlinemappackscrollsmooth = onlinemappackscrollsmooth - scrollsmoothrate*dt
+			onlinemappackscrollsmooth = onlinemappackscrollsmooth - (onlinemappackscrollsmooth-onlinemappackscroll)*dt*5-0.1*dt
 			if onlinemappackscrollsmooth < onlinemappackscroll then
 				onlinemappackscrollsmooth = onlinemappackscroll
 			end
 		elseif onlinemappackscrollsmooth < onlinemappackscroll then
-			onlinemappackscrollsmooth = onlinemappackscrollsmooth + scrollsmoothrate*dt
+			onlinemappackscrollsmooth = onlinemappackscrollsmooth - (onlinemappackscrollsmooth-onlinemappackscroll)*dt*5+0.1*dt
 			if onlinemappackscrollsmooth > onlinemappackscroll then
 				onlinemappackscrollsmooth = onlinemappackscroll
 			end
@@ -88,12 +92,12 @@ function menu_update(dt)
 	
 	if mappackhorscroll then
 		if mappackhorscrollsmooth > mappackhorscroll then
-			mappackhorscrollsmooth = mappackhorscrollsmooth - scrollsmoothrate*dt
+			mappackhorscrollsmooth = mappackhorscrollsmooth - (mappackhorscrollsmooth-mappackhorscroll)*dt*5-0.03*dt
 			if mappackhorscrollsmooth < mappackhorscroll then
 				mappackhorscrollsmooth = mappackhorscroll
 			end
 		elseif mappackhorscrollsmooth < mappackhorscroll then
-			mappackhorscrollsmooth = mappackhorscrollsmooth + scrollsmoothrate*dt
+			mappackhorscrollsmooth = mappackhorscrollsmooth - (mappackhorscrollsmooth-mappackhorscroll)*dt*5+0.03*dt
 			if mappackhorscrollsmooth > mappackhorscroll then
 				mappackhorscrollsmooth = mappackhorscroll
 			end
@@ -187,11 +191,15 @@ function menu_draw()
 			xtodraw = width
 		end
 	end
-	
-	--portal background
-	if portalbackground then
-		for x = 1, xtodraw do
-			love.graphics.draw(portalbackgroundimg, (x-1)*16*scale, -8*scale, 0, scale, scale)
+		
+	--custom background
+	if custombackground then
+		for i = #custombackgroundimg, 1, -1 do
+			for y = 1, math.ceil(15/custombackgroundheight[i]) do
+				for x = 1, math.ceil(width/custombackgroundwidth[i])+1 do
+					love.graphics.draw(custombackgroundimg[i], math.floor(((x-1)*custombackgroundwidth[i])*16*scale), (y-1)*custombackgroundheight[i]*16*scale, 0, scale, scale)
+				end
+			end
 		end
 	end
 	
@@ -217,10 +225,6 @@ function menu_draw()
 	end
 	
 	---UI
-	love.graphics.translate(0, -yoffset*scale)
-	if yoffset < 0 then
-		love.graphics.translate(0, yoffset*scale)
-	end
 	
 	properprint("mario", uispace*.5 - 24*scale, 8*scale)
 	properprint("000000", uispace*0.5-24*scale, 16*scale)
@@ -235,12 +239,8 @@ function menu_draw()
 	
 	properprint("time", uispace*3.5 - 16*scale, 8*scale)
 	
-	if yoffset < 0 then
-		love.graphics.translate(0, -yoffset*scale)
-	end
-	love.graphics.translate(0, yoffset*scale)
-	
 	for j = 1, players do
+	
 		--draw player
 		love.graphics.setColor(255, 255, 255, 255)
 		for k = 1, 3 do
@@ -273,6 +273,12 @@ function menu_draw()
 	if gamestate == "menu" then
 		love.graphics.draw(titleimage, 40*scale, 24*scale, 0, scale, scale)
 		
+		if updatenotification then
+			love.graphics.setColor(255, 0, 0)
+			properprint("version outdated!|go to stabyourself.net|to download latest", 220*scale, 90*scale)
+			love.graphics.setColor(255, 255, 255, 255)
+		end
+		
 		if selection == 0 then
 			love.graphics.draw(menuselection, 73*scale, (137+(selection-1)*16)*scale, 0, scale, scale)
 		elseif selection == 1 then
@@ -286,7 +292,7 @@ function menu_draw()
 		end
 		
 		local start = 9
-		if portalbackground then
+		if custombackground then
 			start = 1
 		end
 		
@@ -339,6 +345,30 @@ function menu_draw()
 			love.graphics.draw(playerselectimg, 102*scale, 138*scale, 0, -scale, scale)
 		end
 		
+		if selectworldopen then
+			love.graphics.setColor(0, 0, 0)
+			love.graphics.rectangle("fill", 30*scale, 92*scale, 200*scale, 60*scale)
+			love.graphics.setColor(255, 255, 255)
+			drawrectangle(31, 93, 198, 58)
+			properprint("select world", 83*scale, 105*scale)
+			for i = 1, 8 do
+				if selectworldcursor == i then
+					love.graphics.setColor(255, 255, 255)
+				elseif reachedworlds[mappack][i] then
+					love.graphics.setColor(200, 200, 200)
+				elseif selectworldexists[i] then
+					love.graphics.setColor(50, 50, 50)
+				else
+					love.graphics.setColor(0, 0, 0)
+				end
+				
+				properprint(i, (55+(i-1)*20)*scale, 130*scale)
+				if i == selectworldcursor then
+					properprint("v", (55+(i-1)*20)*scale, 120*scale)
+				end
+			end
+		end
+		
 	elseif gamestate == "mappackmenu" then
 		--background
 		love.graphics.setColor(0, 0, 0, 100)
@@ -353,14 +383,26 @@ function menu_draw()
 			love.graphics.rectangle("fill", 21*scale, 16*scale, 218*scale, 200*scale)
 			love.graphics.setColor(255, 255, 255, 255)
 			properprint("a little patience..|downloading " .. currentdownload .. " of " .. downloadcount, 50*scale, 30*scale)
+			drawrectangle(50, 55, 152, 10)
+			love.graphics.rectangle("fill", 50*scale, 55*scale, 152*((currentfiledownload-1)/(filecount-1))*scale, 10*scale)
 		else
-		
-			love.graphics.translate(- mappackhorscrollsmooth*scale*mappackhorscrollrange, 0)
+			love.graphics.translate(-round(mappackhorscrollsmooth*scale*mappackhorscrollrange), 0)
 			
 			if mappackhorscrollsmooth < 1 then
 				--draw each butten (even if all you do, is press ONE. BUTTEN.)
 				--scrollbar offset
-				love.graphics.translate(0, -mappackscrollsmooth*60*scale)
+				love.graphics.translate(0, -round(mappackscrollsmooth*60*scale))
+				
+				love.graphics.setScissor(240*scale, 16*scale, 200*scale, 200*scale)
+				love.graphics.setColor(0, 0, 0, 200)
+				love.graphics.rectangle("fill", 240*scale, 81*scale, 115*scale, 61*scale)
+				love.graphics.setColor(255, 255, 255)
+				if not savefolderfailed then
+					properprint("press right to|access the dlc||press m to|open your|mappack folder", 241*scale, 83*scale)
+				else
+					properprint("press right to|access the dlc||could not|open your|mappack folder", 241*scale, 83*scale)
+				end
+				love.graphics.setScissor(21*scale, 16*scale, 218*scale, 200*scale)
 				
 				for i = 1, #mappacklist do
 					--back
@@ -420,7 +462,7 @@ function menu_draw()
 					end
 				end
 			
-				love.graphics.translate(0, mappackscrollsmooth*60*scale)
+				love.graphics.translate(0, round(mappackscrollsmooth*60*scale))
 			
 				local i = mappackscrollsmooth / (#mappacklist-3.233)
 			
@@ -428,32 +470,37 @@ function menu_draw()
 			
 			end
 			
-			love.graphics.translate(- (- mappackhorscrollsmooth*scale*mappackhorscrollrange), 0)
+			love.graphics.translate(round(mappackhorscrollsmooth*scale*mappackhorscrollrange), 0)
 			----------
 			--ONLINE--
 			----------
 			
-			love.graphics.translate(mappackhorscrollrange*scale - mappackhorscrollsmooth*scale*mappackhorscrollrange, 0)
+			love.graphics.translate(round(mappackhorscrollrange*scale - mappackhorscrollsmooth*scale*mappackhorscrollrange), 0)
 			
 			if mappackhorscrollsmooth > 0 then
 				if #onlinemappacklist == 0 then
-					properprint(" no dlc yet, sorry..| come back later for| more mari0 content!||  you can also send|us your own mappacks!", 40*scale, 80*scale)
+					properprint("something went wrong||      sorry d:||maybe your internet|does not work right?", 40*scale, 80*scale)
 				end
 				
 				love.graphics.setScissor()
 				love.graphics.setColor(0, 0, 0, 200)
 				love.graphics.rectangle("fill", 241*scale, 16*scale, 150*scale, 200*scale)
 				love.graphics.setColor(255, 255, 255, 255)
-				properprint("wanna contribute?|make a mappack and|send an email to|mappack at|stabyourself.net!||include your map-|pack! you can find|it in your|appdata/mari0 dir.", 244*scale, 19*scale)
+				properprint("wanna contribute?|make a mappack and|send an email to|mappack at|stabyourself.net!||include your map-|pack! you can find|it in your appdata|love/mari0 dir.", 244*scale, 19*scale)
 				if outdated then
 					love.graphics.setColor(255, 0, 0, 255)
 					properprint("version outdated!|you have an old|version of mari0!|mappacks could not|be downloaded.|go to|stabyourself.net|to download latest", 244*scale, 130*scale)
-				love.graphics.setColor(255, 255, 255, 255)
+					love.graphics.setColor(255, 255, 255, 255)
+				elseif downloaderror then
+					love.graphics.setColor(255, 0, 0, 255)
+					properprint("download error!|something went|wrong while|downloading|mappacks.|press left and|right to try|again.  sorry.", 244*scale, 130*scale)
+					love.graphics.setColor(255, 255, 255, 255)
 				end
+					
 				love.graphics.setScissor(21*scale, 16*scale, 218*scale, 200*scale)
 				
 				--scrollbar offset
-				love.graphics.translate(0, -onlinemappackscrollsmooth*60*scale)
+				love.graphics.translate(0, -round(onlinemappackscrollsmooth*60*scale))
 				for i = 1, #onlinemappacklist do
 					--back
 					love.graphics.draw(mappackback, 25*scale, (20+(i-1)*60)*scale, 0, scale, scale)
@@ -510,14 +557,14 @@ function menu_draw()
 					end
 				end
 			
-				love.graphics.translate(0, onlinemappackscrollsmooth*60*scale)
+				love.graphics.translate(0, round(onlinemappackscrollsmooth*60*scale))
 			
 				local i = onlinemappackscrollsmooth / (#onlinemappacklist-3.233)
 			
 				love.graphics.draw(mappackscrollbar, 227*scale, (20+i*160)*scale, 0, scale, scale)
 			end
 			
-			love.graphics.translate(- (mappackhorscrollrange*scale - mappackhorscrollsmooth*scale*mappackhorscrollrange), 0)
+			love.graphics.translate(- round(mappackhorscrollrange*scale - mappackhorscrollsmooth*scale*mappackhorscrollrange), 0)
 		end
 		
 		love.graphics.setScissor()
@@ -832,7 +879,7 @@ function menu_draw()
 			
 			love.graphics.setColor(255, 255, 255, alpha)
 			
-			properprint("portal 1 color:", 31*scale, 150*scale)
+			properprint("coop portal 1 color:", 31*scale, 150*scale)
 			
 			love.graphics.draw(huebarimg, 32*scale, 170*scale, 0, scale, scale)
 			
@@ -849,7 +896,7 @@ function menu_draw()
 			
 			love.graphics.setColor(255, 255, 255, alpha)
 			
-			properprint("portal 2 color:", 31*scale, 180*scale)
+			properprint("coop portal 2 color:", 31*scale, 180*scale)
 			
 			love.graphics.draw(huebarimg, 32*scale, 200*scale, 0, scale, scale)
 			
@@ -873,9 +920,13 @@ function menu_draw()
 			else
 				love.graphics.setColor(100, 100, 100, 255)
 			end
-			properprint("shader1:", 30*scale, 55*scale)
-			properprint(string.lower(shaderlist[currentshaderi1]), (180-string.len(shaderlist[currentshaderi1])*8)*scale, 55*scale)
 			
+			properprint("shader1:", 30*scale, 55*scale)
+			if shaderssupported == false then
+				properprint("unsupported", (180-string.len("unsupported")*8)*scale, 55*scale)
+			else
+				properprint(string.lower(shaderlist[currentshaderi1]), (180-string.len(shaderlist[currentshaderi1])*8)*scale, 55*scale)
+			end
 			
 			if optionsselection == 4 then
 				love.graphics.setColor(255, 255, 255, 255)
@@ -883,7 +934,11 @@ function menu_draw()
 				love.graphics.setColor(100, 100, 100, 255)
 			end
 			properprint("shader2:", 30*scale, 65*scale)
-			properprint(string.lower(shaderlist[currentshaderi2]), (180-string.len(shaderlist[currentshaderi2])*8)*scale, 65*scale)
+			if shaderssupported == false then
+				properprint("unsupported", (180-string.len("unsupported")*8)*scale, 65*scale)
+			else
+				properprint(string.lower(shaderlist[currentshaderi2]), (180-string.len(shaderlist[currentshaderi2])*8)*scale, 65*scale)
+			end
 			
 			love.graphics.setColor(100, 100, 100, 255)
 			properprint("shaders will really", 30*scale, 80*scale)
@@ -928,6 +983,9 @@ function menu_draw()
 			else
 				properprint("off", (180-24)*scale, 150*scale)
 			end
+			
+			love.graphics.setColor(100, 100, 100, 255)
+			properprint("you can lock the|mouse with f12", 30*scale, 165*scale)
 			
 			love.graphics.setColor(255, 255, 255, 255)
 			properprint(versionstring, 150*scale, 207*scale)
@@ -1027,8 +1085,35 @@ function menu_draw()
 			else
 				properprint("off", (180-24)*scale, 165*scale)
 			end
+			
+			if optionsselection == 9 then
+				love.graphics.setColor(255, 255, 255, 255)
+			else
+				love.graphics.setColor(100, 100, 100, 255)
+			end
+			
+			properprint("infinite time:", 30*scale, 180*scale)
+			if infinitetime then
+				properprint("on", (180-16)*scale, 180*scale)
+			else
+				properprint("off", (180-24)*scale, 180*scale)
+			end
+			
+			if optionsselection == 10 then
+				love.graphics.setColor(255, 255, 255, 255)
+			else
+				love.graphics.setColor(100, 100, 100, 255)
+			end
+			
+			properprint("infinite lives:", 30*scale, 195*scale)
+			if infinitelives then
+				properprint("on", (180-16)*scale, 195*scale)
+			else
+				properprint("off", (180-24)*scale, 195*scale)
+			end
 		end
 	end
+	love.graphics.translate(0, yoffset*scale)
 end
 
 function loadbackground(background)
@@ -1048,7 +1133,7 @@ function loadbackground(background)
 		end
 		startx = 3
 		starty = 13
-		portalbackground = false
+		custombackground = false
 		backgroundi = 1
 		love.graphics.setBackgroundColor(backgroundcolor[backgroundi])
 	else
@@ -1065,7 +1150,6 @@ function loadbackground(background)
 		end
 		
 		--add custom tiles
-		local bla = love.timer.getTime()
 		if love.filesystem.exists("mappacks/" .. mappack .. "/tiles.png") then
 			customtiles = true
 			customtilesimg = love.graphics.newImage("mappacks/" .. mappack .. "/tiles.png")
@@ -1086,7 +1170,6 @@ function loadbackground(background)
 			customtiles = false
 			customtilecount = 0
 		end
-		print("Custom tileset loaded in: " .. round(love.timer.getTime()-bla, 5))
 		
 		--MAP ITSELF
 		local t = s2[1]:split(",")
@@ -1118,11 +1201,15 @@ function loadbackground(background)
 						starty = y
 					end
 				end
+				
+				if tonumber(r[1]) > smbtilecount+portaltilecount+customtilecount then
+					r[1] = 1
+				end
 			end
 		end
 		
 		--get background color
-		portalbackground = false
+		custombackground = false
 		
 		for i = 2, #s2 do
 			s3 = s2[i]:split("=")
@@ -1132,9 +1219,13 @@ function loadbackground(background)
 				love.graphics.setBackgroundColor(backgroundcolor[backgroundi])
 			elseif s3[1] == "spriteset" then
 				spriteset = tonumber(s3[2])
-			elseif s3[1] == "portalbackground" then
-				portalbackground = true
+			elseif s3[1] == "custombackground" or s3[1] == "portalbackground" then
+				custombackground = true
 			end
+		end
+		
+		if custombackground then
+			loadcustombackground()
 		end
 	end
 end
@@ -1175,7 +1266,7 @@ function loadmappacks()
 	
 	local delete = {}
 	for i = 1, #mappacklist do
-		if love.filesystem.exists( "mappacks/" .. mappacklist[i] .. "/version.txt") then
+		if love.filesystem.exists( "mappacks/" .. mappacklist[i] .. "/version.txt") or not love.filesystem.exists( "mappacks/" .. mappacklist[i] .. "/settings.txt") then
 			table.insert(delete, i)
 		end
 	end
@@ -1201,9 +1292,9 @@ function loadmappacks()
 			mappackicon[i] = nil
 		end
 		
-		mappackauthor[i] = nil
-		mappackdescription[i] = nil
-		mappackbackground[i] = nil
+		mappackauthor[i] = ""
+		mappackdescription[i] = ""
+		mappackbackground[i] = "1-1"
 		if love.filesystem.exists( "mappacks/" .. mappacklist[i] .. "/settings.txt" ) then		
 			local s = love.filesystem.read( "mappacks/" .. mappacklist[i] .. "/settings.txt" )
 			local s1 = s:split("\n")
@@ -1257,7 +1348,7 @@ function loadonlinemappacks()
 	
 	local delete = {}
 	for i = 1, #onlinemappacklist do
-		if not love.filesystem.exists( "mappacks/" .. onlinemappacklist[i] .. "/version.txt") then
+		if not love.filesystem.exists( "mappacks/" .. onlinemappacklist[i] .. "/version.txt") or not love.filesystem.exists( "mappacks/" .. onlinemappacklist[i] .. "/settings.txt") then
 			table.insert(delete, i)
 		end
 	end
@@ -1330,15 +1421,20 @@ function loadonlinemappacks()
 end
 
 function downloadmappacks()	
-	local onlinedata = http.request("http://server.stabyourself.net/mari0/?mode=mappacks")
+	downloaderror = false
+	local onlinedata, code = http.request("http://server.stabyourself.net/mari0/index2.php?mode=mappacks")
 	
-	if not onlinedata then
-		print("server down!")
-		return
+	if code ~= 200 then
+		downloaderror = true
+		return false
+	elseif not onlinedata then
+		downloaderror = true
+		return false
 	end
 	
 	local maplist = {}
 	local versionlist = {}
+	local latestversion = marioversion
 	
 	local split1 = onlinedata:split("<")
 	for i = 2, #split1 do
@@ -1354,8 +1450,10 @@ function downloadmappacks()
 	
 	if latestversion > marioversion then
 		outdated = true
-		return
+		return false
 	end
+	
+	success = true
 	
 	--download all mappacks
 	for i = 1, #maplist do
@@ -1374,34 +1472,111 @@ function downloadmappacks()
 			--draw
 			currentdownload = i
 			downloadcount = #maplist
-			loadingonlinemappacks = true
-			love.graphics.clear()
-			love.draw()
-			love.graphics.present()
-			loadingonlinemappacks = false
 			
 			if love.filesystem.exists("mappacks/" .. maplist[i] .. "/") then
 				love.filesystem.remove("mappacks/" .. maplist[i] .. "/")
 			end
 			
 			love.filesystem.mkdir("mappacks/" .. maplist[i])
-			local onlinedata = http.request("http://server.stabyourself.net/mari0/?mode=getmap&get=" .. maplist[i])
-			local split1 = onlinedata:split("<")
-			for j = 2, #split1 do
-				local split2 = split1[j]:split(">")
-				if split2[1] == "asset" then
-					local target = "mappacks/" .. maplist[i] .. "/" .. split2[2]:match("([^/]-)$")
-					downloadfile(split2[2], target)
+			local onlinedata, code = http.request("http://server.stabyourself.net/mari0/index2.php?mode=getmap&get=" .. maplist[i])
+			
+			if code == 200 then
+				filecount = 0
+				local checksums = {}
+				
+				local split1 = onlinedata:split("<")
+				for j = 2, #split1 do
+					local split2 = split1[j]:split(">")
+					if split2[1] == "asset" then
+						filecount = filecount + 1
+					elseif split2[1] == "checksum" then
+						table.insert(checksums, split2[2])
+					end
 				end
+				
+				currentfiledownload = 1
+				
+				local split1 = onlinedata:split("<")
+				for j = 2, #split1 do
+					local split2 = split1[j]:split(">")
+					if split2[1] == "asset" then
+						loadingonlinemappacks = true
+						love.graphics.clear()
+						love.draw()
+						love.graphics.present()
+						loadingonlinemappacks = false
+						
+						local target = "mappacks/" .. maplist[i] .. "/" .. split2[2]:match("([^/]-)$")
+						
+						local tries = 0
+						success = false
+						while not success and tries < 3 do
+							success = downloadfile(split2[2], target, checksums[currentfiledownload])
+							tries = tries + 1
+						end
+						
+						if not success then
+							break
+						end
+						currentfiledownload = currentfiledownload + 1
+					end
+				end
+				if success then
+					love.filesystem.write( "mappacks/" .. maplist[i] .. "/version.txt", versionlist[i])
+				end
+			else
+				success = false
 			end
-			love.filesystem.write( "mappacks/" .. maplist[i] .. "/version.txt", versionlist[i])
+		end
+		
+		--Delete stuff and stuff.
+		if not success then
+			if love.filesystem.exists("mappacks/" .. maplist[i] .. "/") then
+				local list = love.filesystem.enumerate("mappacks/" .. maplist[i] .. "/")
+				for j = 1, #list do
+					love.filesystem.remove("mappacks/" .. maplist[i] .. "/" .. list[j])
+				end
+				
+				love.filesystem.remove("mappacks/" .. maplist[i] .. "/")
+			end
+			downloaderror = true
+			break
+		else
+			print("Download succeeded.")
 		end
 	end
+	
+	return true
 end
 
 function menu_keypressed(key, unicode)
 	if gamestate == "menu" then
-		if key == "up" then
+		if selectworldopen then
+			if (key == "right" or key == "d") then
+				local target = selectworldcursor+1
+				while target < 9 and not reachedworlds[mappack][target] do
+					target = target + 1
+				end
+				if target < 9 then
+					selectworldcursor = target
+				end
+			elseif (key == "left" or key == "a") then
+				local target = selectworldcursor-1
+				while target > 0 and not reachedworlds[mappack][target] do
+					target = target - 1
+				end
+				if target > 0 then
+					selectworldcursor = target
+				end
+			elseif (key == "return" or key == "enter" or key == "kpenter" or key == " ") then
+				selectworldopen = false
+				game_load(selectworldcursor)
+			elseif key == "escape" then
+				selectworldopen = false
+			end
+			return
+		end
+		if (key == "up" or key == "w") then
 			if continueavailable then
 				if selection > 0 then
 					selection = selection - 1
@@ -1411,15 +1586,15 @@ function menu_keypressed(key, unicode)
 					selection = selection - 1
 				end
 			end
-		elseif key == "down" then
+		elseif (key == "down" or key == "s") then
 			if selection < 4 then
 				selection = selection + 1
 			end
-		elseif (key == "return" or key == "enter") then
+		elseif (key == "return" or key == "enter" or key == "kpenter" or key == " ") then
 			if selection == 0 then
 				game_load(true)
 			elseif selection == 1 then
-				game_load()
+				selectworld()
 			elseif selection == 2 then
 				editormode = true
 				players = 1
@@ -1431,6 +1606,8 @@ function menu_keypressed(key, unicode)
 				goombaattack = false
 				sonicrainboom = false
 				playercollisions = false
+				infinitetime = false
+				infinitelives = false
 				game_load()
 			elseif selection == 3 then
 				gamestate = "mappackmenu"
@@ -1440,18 +1617,18 @@ function menu_keypressed(key, unicode)
 			end
 		elseif key == "escape" then
 			love.event.quit()
-		elseif key == "left" then
+		elseif (key == "left" or key == "a") then
 			if players > 1 then
 				players = players - 1
 			end
-		elseif key == "right" then
+		elseif (key == "right" or key == "d") then
 			players = players + 1
 			if players > 4 then
 				players = 4
 			end
 		end
 	elseif gamestate == "mappackmenu" then
-		if key == "up" then
+		if (key == "up" or key == "w") then
 			if mappacktype == "local" then
 				if mappackselection > 1 then
 					mappackselection = mappackselection - 1
@@ -1481,7 +1658,7 @@ function menu_keypressed(key, unicode)
 					onlineupdatescroll()
 				end
 			end
-		elseif key == "down" then
+		elseif (key == "down" or key == "s") then
 			if mappacktype == "local" then
 				if mappackselection < #mappacklist then
 					mappackselection = mappackselection + 1
@@ -1511,18 +1688,22 @@ function menu_keypressed(key, unicode)
 					onlineupdatescroll()
 				end
 			end	
-		elseif key == "escape" or (key == "return" or key == "enter") then
+		elseif key == "escape" or (key == "return" or key == "enter" or key == "kpenter" or key == " ") then
 			gamestate = "menu"
 			saveconfig()
 			if mappack == "custom_mappack" then
 				createmappack()
 			end
-		elseif key == "right" then
+		elseif (key == "right" or key == "d") then
 			loadonlinemappacks()
 			mappackhorscroll = 1
-		elseif key == "left" then
+		elseif (key == "left" or key == "a") then
 			loadmappacks()
 			mappackhorscroll = 0
+		elseif key == "m" then
+			if not openSaveFolder("mappacks") then
+				savefolderfailed = true
+			end
 		end
 	elseif gamestate == "onlinemenu" then
 		if CLIENT == false and SERVER == false then
@@ -1532,29 +1713,29 @@ function menu_keypressed(key, unicode)
 				server_load()
 			end
 		elseif SERVER then
-			if (key == "return" or key == "enter") then
+			if (key == "return" or key == "enter" or key == "kpenter" or key == " ") then
 				server_start()
 			end
 		end
 	elseif gamestate == "options" then
 		if optionsselection == 1 then
-			if key == "left" then
+			if (key == "left" or key == "a") then
 				if optionstab > 1 then
 					optionstab = optionstab - 1
 				end
-			elseif key == "right" then
+			elseif (key == "right" or key == "d") then
 				if optionstab < 4 then
 					optionstab = optionstab + 1
 				end
 			end
 		elseif optionsselection == 2 then
-			if key == "left" then
+			if (key == "left" or key == "a") then
 				if optionstab == 2 or optionstab == 1 then
 					if skinningplayer > 1 then
 						skinningplayer = skinningplayer - 1
 					end
 				end
-			elseif key == "right" then
+			elseif (key == "right" or key == "d") then
 				if optionstab == 2 or optionstab == 1 then
 					if skinningplayer < 4 then
 						skinningplayer = skinningplayer + 1
@@ -1566,14 +1747,11 @@ function menu_keypressed(key, unicode)
 			end
 		end
 		
-		if (key == "return" or key == "enter") then
+		if (key == "return" or key == "enter" or key == "kpenter" or key == " ") then
 			if optionstab == 1 then
 				if optionsselection == 3 then
 					if mouseowner == skinningplayer then
-						mouseowner = skinningplayer + 1
-						if mouseowner == 5 then
-							mouseowner = 1
-						end
+						mouseowner = 0
 					else
 						mouseowner = skinningplayer
 					end
@@ -1587,7 +1765,7 @@ function menu_keypressed(key, unicode)
 					resetconfig()
 				end
 			end
-		elseif key == "down" then
+		elseif (key == "down" or key == "s") then
 			if optionstab == 1 then
 				if skinningplayer ~= mouseowner then
 					if optionsselection < 15 then
@@ -1615,13 +1793,13 @@ function menu_keypressed(key, unicode)
 					optionsselection = 1
 				end
 			elseif optionstab == 4 and gamefinished then
-				if optionsselection < 8 then
+				if optionsselection < 10 then
 					optionsselection = optionsselection + 1
 				else
 					optionsselection = 1
 				end
 			end
-		elseif key == "up" then
+		elseif (key == "up" or key == "w") then
 			if optionsselection > 1 then
 				optionsselection = optionsselection - 1
 			else
@@ -1636,10 +1814,10 @@ function menu_keypressed(key, unicode)
 				elseif optionstab == 3 then
 					optionsselection = 8
 				elseif optionstab == 4 and gamefinished then
-					optionsselection = 8
+					optionsselection = 10
 				end
 			end
-		elseif key == "right" then
+		elseif (key == "right" or key == "d") then
 			if optionstab == 2 then
 				if optionsselection == 3 then
 					if mariohats[skinningplayer][1] == nil then
@@ -1736,9 +1914,13 @@ function menu_keypressed(key, unicode)
 					playertypei = 1
 				elseif optionsselection == 8 then
 					playercollisions = not playercollisions
+				elseif optionsselection == 9 then
+					infinitetime = not infinitetime
+				elseif optionsselection == 10 then
+					infinitelives = not infinitelives
 				end
 			end				
-		elseif key == "left" then
+		elseif (key == "left" or key == "a") then
 			if optionstab == 2 then
 				if optionsselection == 3 then
 					if mariohats[skinningplayer][1] == 1 then
@@ -1778,7 +1960,7 @@ function menu_keypressed(key, unicode)
 				elseif optionsselection == 5 then
 					if volume > 0 then
 						volume = volume - 0.1
-						if volume < 0 then
+						if volume <= 0 then
 							volume = 0
 							soundenabled = false
 						end
@@ -1836,6 +2018,10 @@ function menu_keypressed(key, unicode)
 					playertypei = 1
 				elseif optionsselection == 8 then
 					playercollisions = not playercollisions
+				elseif optionsselection == 9 then
+					infinitetime = not infinitetime
+				elseif optionsselection == 10 then
+					infinitelives = not infinitelives
 				end
 			end
 		elseif key == "escape" then
@@ -1866,9 +2052,12 @@ function menu_joystickreleased(joystick, button)
 end
 
 function keypromptenter(t, ...)
+	arg = {...}
+	if t == "key" and (arg[1] == ";" or arg[1] == "," or arg[1] == "," or arg[1] == "-") then
+		return
+	end
 	buttonerror = false
 	axiserror = false
-	arg = {...}
 	local buttononly = {"run", "jump", "reload", "use", "portal1", "portal2"}
 	local axisonly = {"aimx", "aimy"}
 	if t ~= "key" or arg[1] ~= "escape" then
@@ -1935,9 +2124,24 @@ function keypromptstart()
 	end
 end
 
-function downloadfile(url, target)
-	local data = http.request(url)
-	love.filesystem.write(target, data)
+function downloadfile(url, target, checksum)
+	local data, code = http.request(url)
+	
+	if code ~= 200 then
+		return false
+	end
+	
+	if checksum ~= sha1(data) then
+		print("Checksum doesn't match!")
+		return false
+	end
+	
+	if data then
+		love.filesystem.write(target, data)
+		return true
+	else
+		return false
+	end
 end
 
 function reset_mappacks()
@@ -1991,4 +2195,33 @@ function resetconfig()
 	shaders:set(2, nil)
 	saveconfig()
 	loadbackground("1-1.txt")
+end
+
+function selectworld()
+	if not reachedworlds[mappack] then
+		game_load()
+	end
+	
+	local noworlds = true
+	for i = 2, 8 do
+		if reachedworlds[mappack][i] then
+			noworlds = false
+			break
+		end
+	end
+	
+	if noworlds then
+		game_load()
+		return
+	end
+	
+	selectworldopen = true
+	selectworldcursor = 1
+	
+	selectworldexists = {}
+	for i = 1, 8 do
+		if love.filesystem.exists("mappacks/" .. mappack .. "/" .. i .. "-1.txt") then
+			selectworldexists[i] = true
+		end
+	end
 end

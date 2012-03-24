@@ -7,6 +7,7 @@ hatoffsets["falling"] = {0, 0}
 hatoffsets["climbing"] = {{2, 0}, {2, -1}}
 hatoffsets["swimming"] = {{1, -1}, {1, -1}}
 hatoffsets["dead"] = false
+hatoffsets["grow"] = {-6, 0}
 
 local i
 hat = {}

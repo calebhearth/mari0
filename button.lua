@@ -22,7 +22,7 @@ function button:init(x, y)
 end
 
 function button:update(dt)
-	local colls = checkrect(self.x+5/16, self.y-2/16, 20/16, 1, {"player", "goomba", "box"})
+	local colls = checkrect(self.x+5/16, self.y-2/16, 20/16, 1, {"player", "goomba", "koopa", "box"})
 	
 	if (#colls > 0) ~= self.out then
 		self.out = not self.out

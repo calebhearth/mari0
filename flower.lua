@@ -10,7 +10,7 @@ function flower:init(x, y)
 	self.width = 12/16
 	self.height = 12/16
 	self.static = true
-	self.active = false
+	self.active = true
 	self.category = 6
 	self.mask = {true}
 	self.destroy = false
@@ -38,34 +38,34 @@ function flower:update(dt)
 	if self.uptimer < mushroomtime then
 		self.uptimer = self.uptimer + dt
 		self.y = self.y - dt*(1/mushroomtime)
+	end
+	
+	if self.uptimer > mushroomtime then
+		self.y = self.starty-27/16
+		self.active = true
+		self.drawable = true
+	end
+	
+	--animate
+	self.timer = self.timer + dt
+	while self.timer > staranimationdelay do
+		self.quadi = self.quadi + 1
+		if self.quadi == 5 then
+			self.quadi = 1
+		end
+		self.quad = flowerquad[self.quadi]
+		self.timer = self.timer - staranimationdelay
+	end
+	
+	if self.destroy then
+		return true
 	else
-		if self.static == true then
-			self.y = self.starty-27/16
-			self.active = true
-			self.drawable = true
-		end
-		
-		--animate
-		self.timer = self.timer + dt
-		while self.timer > staranimationdelay do
-			self.quadi = self.quadi + 1
-			if self.quadi == 5 then
-				self.quadi = 1
-			end
-			self.quad = flowerquad[self.quadi]
-			self.timer = self.timer - staranimationdelay
-		end
-		
-		if self.destroy then
-			return true
-		else
-			return false
-		end
+		return false
 	end
 end
 
 function flower:draw()
-	if self.uptimer < mushroomtime then
+	if self.uptimer < mushroomtime and not self.destroy then
 		--Draw it coming out of the block.
 		love.graphics.drawq(self.graphic, self.quad, math.floor(((self.x-xscroll)*16+self.offsetX)*scale), math.floor((self.y*16-self.offsetY)*scale), 0, scale, scale, self.quadcenterX, self.quadcenterY)
 	end

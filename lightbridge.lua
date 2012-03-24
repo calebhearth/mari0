@@ -1,13 +1,42 @@
 lightbridge = class:new()
 
-function lightbridge:init(x, y, dir)
+function lightbridge:init(x, y, dir, r)
 	self.cox = x
 	self.coy = y
 	self.dir = dir
+	self.r = r
 	
 	self.childtable = {}
 	
+	self.enabled = true
 	self:updaterange()
+end
+
+function lightbridge:link()
+	self.outtable = {}
+	if #self.r > 2 then
+		for j, w in pairs(outputs) do
+			for i, v in pairs(objects[w]) do
+				if tonumber(self.r[4]) == v.cox and tonumber(self.r[5]) == v.coy then
+					v:addoutput(self)
+					self.enabled = false
+				end
+			end
+		end
+	end
+end
+
+function lightbridge:input(t)
+	if t == "on" then
+		self.enabled = true
+		self:updaterange()
+	elseif t == "off" then
+		self.enabled = false
+		self:updaterange()
+	else
+		self.enabled = not self.enabled
+		self:updaterange()
+	end
 end
 
 function lightbridge:update(dt)
@@ -33,13 +62,17 @@ function lightbridge:updaterange()
 	end
 	self.childtable = {}
 	
+	if self.enabled == false then
+		return
+	end
+	
 	local dir = self.dir
 	local startx, starty = self.cox, self.coy
 	local x, y = self.cox, self.coy
 	
 	local firstcheck = true
-	
-	while x >= 1 and x <= mapwidth and y >= 1 and y <= 15 and tilequads[map[x][y][1]].collision == false and (x ~= startx or y ~= starty or dir ~= self.dir or firstcheck == true)  do
+	local quit = false
+	while x >= 1 and x <= mapwidth and y >= 1 and y <= 15 and tilequads[map[x][y][1]].collision == false and (x ~= startx or y ~= starty or dir ~= self.dir or firstcheck == true) and quit == false do
 		firstcheck = false
 		
 		if dir == "right" then
@@ -70,6 +103,21 @@ function lightbridge:updaterange()
 				y = y - 1
 			elseif dir == "down" then
 				y = y + 1
+			end
+		end
+		
+		--doors
+		for i, v in pairs(objects["door"]) do
+			if v.active then
+				if v.dir == "ver" then
+					if x == v.cox and (y == v.coy or y == v.coy-1) then
+						quit = true
+					end
+				elseif v.dir == "hor" then
+					if y == v.coy and (x == v.cox or x == v.cox+1) then
+						quit = true
+					end
+				end
 			end
 		end
 	end
@@ -116,27 +164,27 @@ function lightbridgebody:pushstuff()
 		local v = objects[col[i]][col[i+1]]
 		if self.dir == "ver" then
 			if v.speedx >= 0 then
-				if #checkrect(self.x + self.width, v.y, v.width, v.height, {"exclude", v}) > 0 then
+				if #checkrect(self.x + self.width, v.y, v.width, v.height, {"exclude", v}, true) > 0 then
 					v.x = self.x - v.width
 				else
 					v.x = self.x + self.width
 				end
 			else
-				if #checkrect(self.x - v.width, v.y, v.width, v.height, {"exclude", v}) > 0 then
+				if #checkrect(self.x - v.width, v.y, v.width, v.height, {"exclude", v}, true) > 0 then
 					v.x = self.x + self.width
 				else
 					v.x = self.x - v.width
 				end
 			end
 		elseif self.dir == "hor" then
-			if v.speedy >= 0 then
-				if #checkrect(v.x, self.y - v.height, v.width, v.height, {"exclude", v}) > 0 then
+			if v.speedy <= 0 then
+				if #checkrect(v.x, self.y - v.height, v.width, v.height, {"exclude", v}, true) > 0 then
 					v.y = self.y + self.height
 				else
 					v.y = self.y - v.height
 				end
 			else
-				if #checkrect(v.x, self.y + self.height, v.width, v.height, {"exclude", v}) > 0 then
+				if #checkrect(v.x, self.y + self.height, v.width, v.height, {"exclude", v}, true) > 0 then
 					v.y = self.y - v.height
 				else
 					v.y = self.y + self.height

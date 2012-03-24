@@ -9,7 +9,7 @@ function mushroom:init(x, y)
 	self.width = 12/16
 	self.height = 12/16
 	self.static = true
-	self.active = false
+	self.active = true
 	self.category = 6
 	self.mask = {	true,
 					false, false, true, true, true,
@@ -62,17 +62,17 @@ function mushroom:update(dt)
 			self.active = true
 			self.drawable = true
 		end
-		
-		if self.destroy then
-			return true
-		else
-			return false
-		end
+	end
+	
+	if self.destroy then
+		return true
+	else
+		return false
 	end
 end
 
 function mushroom:draw()
-	if self.uptimer < mushroomtime then
+	if self.uptimer < mushroomtime and not self.destroy then
 		--Draw it coming out of the block.
 		love.graphics.drawq(entitiesimg, entityquads[2].quad, math.floor(((self.x-xscroll)*16+self.offsetX)*scale), math.floor((self.y*16-self.offsetY)*scale), 0, scale, scale, self.quadcenterX, self.quadcenterY)
 	end

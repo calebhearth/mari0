@@ -113,8 +113,13 @@ function fireball:ceilcollide(a, b)
 	self:hitstuff(a, b)
 end
 
+function fireball:passivecollide(a, b)
+	self:ceilcollide(a, b)
+	return false
+end
+
 function fireball:hitstuff(a, b)
-	if a == "tile" or a == "bulletbill" or a == "portalwall" then
+	if a == "tile" or a == "bulletbill" or a == "portalwall" or a == "spring" then
 		self:explode()
 		playsound(blockhitsound)
 

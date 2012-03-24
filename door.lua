@@ -29,6 +29,7 @@ function door:init(x, y, r, dir)
 	self.active = true
 	
 	self.drawable = false
+	self.firstupdate = true
 end
 
 function door:link()
@@ -45,12 +46,28 @@ function door:link()
 end
 
 function door:update(dt)
+	if self.firstupdate then
+		self.firstupdate = false
+		for i, v in pairs(objects["laser"]) do
+			v:updaterange()
+		end
+		for i, v in pairs(objects["lightbridge"]) do
+			v:updaterange()
+		end
+	end
+		
 	if self.open then
 		if self.timer < 1 then
 			self.timer = self.timer + doorspeed*dt
 			if self.timer >= 1 then
 				self.timer = 1
 				self.active = false
+				for i, v in pairs(objects["laser"]) do
+					v:updaterange()
+				end
+				for i, v in pairs(objects["lightbridge"]) do
+					v:updaterange()
+				end
 			end
 		end
 	else
@@ -106,6 +123,7 @@ function door:pushstuff()
 end
 
 function door:input(t)
+	local prev = self.open
 	if t == "on" then
 		self.open = true
 		if self.timer == 1 then
@@ -125,6 +143,15 @@ function door:input(t)
 		else
 			self.active = true
 			self:pushstuff()
+		end
+	end
+	
+	if self.open ~= prev then
+		for i, v in pairs(objects["laser"]) do
+			v:updaterange()
+		end
+		for i, v in pairs(objects["lightbridge"]) do
+			v:updaterange()
 		end
 	end
 end

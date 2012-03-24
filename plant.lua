@@ -76,4 +76,5 @@ end
 function plant:shotted()
 	playsound(shotsound)
 	self.destroy = true
+	self.active = false
 end

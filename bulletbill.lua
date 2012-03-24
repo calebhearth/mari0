@@ -20,6 +20,10 @@ function rocketlauncher:update(dt)
 end
 
 function rocketlauncher:fire()
+	if #objects["bulletbill"] >= maximumbulletbills then
+		return false
+	end
+	
 	--get nearest player
 	local pl = 1
 	for i = 2, players do

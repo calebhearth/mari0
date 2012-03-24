@@ -8,9 +8,11 @@ function intro_load()
 	
 	screenwidth = 400*scale
 	screenheight = 224*scale
+	allowskip = false
 end
 
 function intro_update(dt)
+	allowskip = true
 	if introprogress < introduration+blackafterintro then
 		introprogress = introprogress + dt
 		if introprogress > introduration+blackafterintro then
@@ -19,6 +21,7 @@ function intro_update(dt)
 		
 		if introprogress > 0.5 and playedwilhelm == nil then
 			playsound(stabsound)
+			
 			playedwilhelm = true
 		end
 		
@@ -60,12 +63,17 @@ function intro_draw()
 end
 
 function intro_mousepressed()
+	if not allowskip then
+		return
+	end
 	stabsound:stop()
 	menu_load()
 end
 
 function intro_keypressed()
+	if not allowskip then
+		return
+	end
 	stabsound:stop()
 	menu_load()
 end
-	

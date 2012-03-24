@@ -116,9 +116,11 @@ function oneup:ceilcollide(a, b)
 end
 
 function givelive(id, t)
-	for i = 1, players do
-		mariolives[i] = mariolives[i]+1
-		respawnplayers()
+	if mariolivecount ~= false then
+		for i = 1, players do
+			mariolives[i] = mariolives[i]+1
+			respawnplayers()
+		end
 	end
 	t.destroy = true
 	t.active = false

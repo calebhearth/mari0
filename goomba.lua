@@ -16,7 +16,7 @@ function goomba:init(x, y, t)
 					false, false, false, false, true,
 					false, true, false, true, false,
 					false, false, true, false, false,
-					true, true, false, false, true,
+					true, true, false, false, false,
 					false, true, true, false, false,
 					true, false, true, true, true}
 	
@@ -135,15 +135,31 @@ function goomba:update(dt)
 			end
 		end
 		
-		if self.speedx > goombaspeed then
-			self.speedx = self.speedx - friction*dt
-			if self.speedx < goombaspeed then
-				self.speedx = goombaspeed
-			end
-		elseif self.speedx < -goombaspeed then
-			self.speedx = self.speedx + friction*dt
-			if self.speedx > goombaspeed then
-				self.speedx = -goombaspeed
+		if self.t ~= "spikeyfall" then
+			if self.speedx > 0 then
+				if self.speedx > goombaspeed then
+					self.speedx = self.speedx - friction*dt*2
+					if self.speedx < goombaspeed then
+						self.speedx = goombaspeed
+					end
+				elseif self.speedx < goombaspeed then
+					self.speedx = self.speedx + friction*dt*2
+					if self.speedx > goombaspeed then
+						self.speedx = goombaspeed
+					end
+				end
+			else
+				if self.speedx < -goombaspeed then
+					self.speedx = self.speedx + friction*dt*2
+					if self.speedx > -goombaspeed then
+						self.speedx = -goombaspeed
+					end
+				elseif self.speedx > -goombaspeed then
+					self.speedx = self.speedx - friction*dt*2
+					if self.speedx < -goombaspeed then
+						self.speedx = -goombaspeed
+					end
+				end
 			end
 		end
 		
@@ -254,6 +270,11 @@ function goomba:floorcollide(a, b)
 			self.animationdirection = "left"
 		end
 	end
+end
+
+function goomba:passivecollide(a, b)
+	self:leftcollide(a, b)
+	return false
 end
 
 function goomba:emancipate(a)

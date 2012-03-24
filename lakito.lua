@@ -13,7 +13,7 @@ function lakito:init(x, y)
 	self.active = true
 	
 	self.mask = {	true,
-					true, false, true, true, true,
+					true, false, false, true, true,
 					true, true, true, true, true,
 					true, false, true, true, true,
 					true, true, true, true, true,
@@ -37,13 +37,12 @@ end
 
 function lakito:update(dt)
 	if self.shot then
+		self.speedy = self.speedy + shotgravity*dt
+		
+		self.x = self.x+self.speedx*dt
+		self.y = self.y+self.speedy*dt
+		
 		if self.passive == false then
-			self.speedy = self.speedy + shotgravity*dt
-			
-			self.x = self.x+self.speedx*dt
-			self.y = self.y+self.speedy*dt
-			
-			
 			self.timer = self.timer + dt
 			if self.timer > lakitorespawn then
 				self.y = self.starty - 12/16

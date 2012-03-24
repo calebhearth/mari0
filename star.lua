@@ -9,7 +9,7 @@ function star:init(x, y)
 	self.width = 12/16
 	self.height = 12/16
 	self.static = true
-	self.active = false
+	self.active = true
 	self.category = 6
 	self.mask = {	true,
 					false, false, true, true, true,
@@ -58,7 +58,6 @@ function star:update(dt)
 		self.uptimer = self.uptimer + dt
 		self.y = self.y - dt*(1/mushroomtime)
 		self.speedx = mushroomspeed
-		
 	else
 		if self.static == true then
 			self.static = false
@@ -66,23 +65,23 @@ function star:update(dt)
 			self.drawable = true
 			self.speedy = -starjumpforce/2
 		end
-		
-		--animate
-		self.timer = self.timer + dt
-		while self.timer > staranimationdelay do
-			self.quadi = self.quadi + 1
-			if self.quadi == 5 then
-				self.quadi = 1
-			end
-			self.quad = starquad[self.quadi]
-			self.timer = self.timer - staranimationdelay
+	end
+	
+	--animate
+	self.timer = self.timer + dt
+	while self.timer > staranimationdelay do
+		self.quadi = self.quadi + 1
+		if self.quadi == 5 then
+			self.quadi = 1
 		end
-		
-		if self.destroy then
-			return true
-		else
-			return false
-		end
+		self.quad = starquad[self.quadi]
+		self.timer = self.timer - staranimationdelay
+	end
+	
+	if self.destroy then
+		return true
+	else
+		return false
 	end
 end
 

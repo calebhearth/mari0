@@ -9,20 +9,26 @@ function laserdetector:init(x, y, dir)
 	
 	self.outtable = {}
 	self.allowclear = true
+	self.out = "off"
 end
 
 function laserdetector:update(dt)
 	self.allowclear = true
+	
+	if self.out ~= self.prevout then
+		self.prevout = self.out
+		for i = 1, #self.outtable do
+			if self.outtable[i].input then
+				self.outtable[i]:input(self.out)
+			end
+		end
+	end
 end
 
 function laserdetector:input(t)
 	self.allowclear = false
 	if t == "on" then
-		for i = 1, #self.outtable do
-			if self.outtable[i].input then
-				self.outtable[i]:input("on")
-			end
-		end
+		self.out = "on"
 	end
 end
 
@@ -45,10 +51,6 @@ end
 function laserdetector:clear()
 	if self.allowclear then
 		self.allowclear = false
-		for i = 1, #self.outtable do
-			if self.outtable[i].input then
-				self.outtable[i]:input("off")
-			end
-		end
+		self.out = "off"
 	end
 end

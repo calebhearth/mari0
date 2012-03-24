@@ -1,6 +1,4 @@
 --[[
-	NOT COPYRIGHT STABYOURSELF.NET
-	NO RIGHTS RESERVED
 	STEAL MY SHIT AND I'LL FUCK YOU UP
 	PRETTY MUCH EVERYTHING BY MAURICE GUÉGAN AND IF SOMETHING ISN'T BY ME THEN IT SHOULD BE OBVIOUS OR NOBODY CARES
 
@@ -10,9 +8,10 @@
 ]]
 
 function love.load()
-	marioversion = 1002
-	versionstring = "version 1.2"
+	marioversion = 1006
+	versionstring = "version 1.6"
 	shaderlist = love.filesystem.enumerate( "shaders/" )
+	dlclist = {"dlc_a_portal_tribute", "dlc_acid_trip", "dlc_escape_the_lab", "dlc_scienceandstuff", "dlc_smb2J", "dlc_the_untitled_game"}
 	
 	local rem
 	for i, v in pairs(shaderlist) do
@@ -28,22 +27,53 @@ function love.load()
 	currentshaderi1 = 1
 	currentshaderi2 = 1
 	
-	loadconfig()
+	hatcount = #love.filesystem.enumerate("graphics/SMB/hats")
+	
+	if not pcall(loadconfig) then
+		players = 1
+		defaultconfig()
+	end
+	
 	saveconfig()
 	width = 25
-	fsaa = 16
+	fsaa = 0
 	fullscreen = false
+	changescale(scale, fullscreen)
 	love.graphics.setCaption( "Mari0" )
-	love.graphics.setMode(width*16*scale, 224*scale, fullscreen, vsync, fsaa) --27x14 blocks (15 blocks actual height)
+	
+	--version check by checking for a const that was added in 0.8.0
+	if love._version_major == nil then error("You have an outdated version of Love! Get 0.8.0 or higher and retry.") end
+	
 	iconimg = love.graphics.newImage("graphics/icon.gif")
 	love.graphics.setIcon(iconimg)
 	
 	love.graphics.setDefaultImageFilter("nearest", "nearest")
+	
+	love.graphics.setBackgroundColor(0, 0, 0)
+	
+	
+	fontimage = love.graphics.newImage("graphics/SMB/font.png")
+	fontglyphs = "0123456789abcdefghijklmnopqrstuvwxyz.:/,'C-_>* !{}?"
+	fontquads = {}
+	for i = 1, string.len(fontglyphs) do
+		fontquads[string.sub(fontglyphs, i, i)] = love.graphics.newQuad((i-1)*8, 0, 8, 8, 512, 8)
+	end
+	
+	math.randomseed(os.time());math.random();math.random()
+	
+	love.graphics.clear()
+	love.graphics.setColor(100, 100, 100)
+	loadingtexts = {"reticulating splines..", "loading..", "booting glados..", "growing potatoes..", "voting against acta..", "rendering important stuff..",
+					"baking cake..", "happy explosion day..", "raising coolness by 20 percent..", "yay facepunch..", "stabbing myself..", "sharpening knives..",
+					"tanaka, thai kick..", "loading game genie.."}
+	loadingtext = loadingtexts[math.random(#loadingtexts)]
+	properprint(loadingtext, 25*8*scale-string.len(loadingtext)*4*scale, 108*scale)
+	love.graphics.present()
 	--require ALL the files!
 	require "shaders"
-	require "netplay" --oooo
 	require "variables"
 	require "class"
+	require "sha1"
 	
 	require "intro"
 	require "menu"
@@ -60,6 +90,8 @@ function love.load()
 	require "koopa"
 	require "cheepcheep"
 	require "mushroom"
+	require "hatconfigs"
+	require "bighatconfigs"
 	require "flower"
 	require "star"
 	require "oneup"
@@ -88,7 +120,6 @@ function love.load()
 	require "bulletbill"
 	require "hammerbro"
 	require "fireball"
-	require "hatconfigs"
 	require "gui"
 	require "blockdebris"
 	require "firework"
@@ -108,12 +139,18 @@ function love.load()
 	require "rainboom"
 	require "miniblock"
 	require "notgate"
+	require "musicloader"
 	
 	http = require("socket.http")
-	
-	math.randomseed(os.time());math.random();math.random()
+	http.TIMEOUT = 1
 	
 	love.filesystem.setIdentity("mari0")
+	
+	updatenotification = false
+	if getupdate() then
+		updatenotification = true
+	end
+	http.TIMEOUT = 4
 	
 	graphicspack = "SMB" --SMB, ALLSTARS
 	playertypei = 1
@@ -124,42 +161,20 @@ function love.load()
 	else
 		soundenabled = true
 	end
+	love.filesystem.mkdir( "mappacks" )
 	editormode = false
 	yoffset = 0
-	autosize = false
 	love.graphics.setPointSize(3*scale)
-	love.graphics.setLineWidth(3*scale) --5!
+	love.graphics.setLineWidth(3*scale)
 	
 	uispace = math.floor(width*16*scale/4)
 	guielements = {}
-	
-	if autosize then
-		love.graphics.setMode(0, 0, fullscreen, vsync, fsaa)
-	
-		desktopwidth = love.graphics.getWidth( )
-		desktopheight = love.graphics.getHeight( )
-		
-		fullscreen = true
-		scale = math.floor(desktopheight/208)
-		width = math.ceil(desktopwidth/(scale*16))
-		love.graphics.setMode(desktopwidth, desktopheight, fullscreen, vsync, fsaa) --27x14 blocks (15 blocks actual height)
-		
-		uispace = math.floor(desktopwidth/4)
-		
-		local pixeldiff = desktopheight/scale - 224
-		if pixeldiff < -7 then --Don't let the ui get out of the screen.
-			pixeldiff = -7
-		end
-		yoffset = pixeldiff
-	end
 	
 	--Backgroundcolors
 	backgroundcolor = {}
 	backgroundcolor[1] = {92, 148, 252}
 	backgroundcolor[2] = {0, 0, 0}
 	backgroundcolor[3] = {32, 56, 236}
-	
-	love.graphics.setBackgroundColor(0, 0, 0)
 	
 	--IMAGES--
 	
@@ -223,13 +238,6 @@ function love.load()
 		end
 	end
 	entitiescount = width*height
-	
-	fontimage = love.graphics.newImage("graphics/" .. graphicspack .. "/font.png")
-	fontglyphs = "0123456789abcdefghijklmnopqrstuvwxyz.:/,'C-_>* !{}?"
-	fontquads = {}
-	for i = 1, string.len(fontglyphs) do
-		fontquads[string.sub(fontglyphs, i, i)] = love.graphics.newQuad((i-1)*8, 0, 8, 8, 512, 8)
-	end
 	
 	fontimage2 = love.graphics.newImage("graphics/" .. graphicspack .. "/smallfont.png")
 	numberglyphs = "012458"
@@ -640,8 +648,6 @@ function love.load()
 	
 	gradientimg = love.graphics.newImage("graphics/gradient.png");gradientimg:setFilter("linear", "linear")
 	
-	portalbackgroundimg = love.graphics.newImage("graphics/" .. graphicspack .. "/portalbackground.png")
-	
 	--optionsmenu
 	skinpuppet = {}
 	secondskinpuppet = {}
@@ -690,7 +696,7 @@ function love.load()
 	konamisound = love.audio.newSource("sounds/konami.ogg", "static");konamisound:setVolume(0);konamisound:play();konamisound:stop();konamisound:setVolume(1)
 	pausesound = love.audio.newSource("sounds/pause.ogg", "static");pausesound:setVolume(0);pausesound:play();pausesound:stop();pausesound:setVolume(1)
 	bulletbillsound = love.audio.newSource("sounds/bulletbill.ogg", "static");pausesound:setVolume(0);pausesound:play();pausesound:stop();pausesound:setVolume(1)
-	stabsound = love.audio.newSource("sounds/stab.ogg")
+	stabsound = love.audio.newSource("sounds/stab.ogg", "static")
 	
 	
 	portal1opensound = love.audio.newSource("sounds/portal1open.ogg", "static");portal1opensound:setVolume(0);portal1opensound:play();portal1opensound:stop();portal1opensound:setVolume(0.3)
@@ -701,6 +707,7 @@ function love.load()
 	lowtime = love.audio.newSource("sounds/lowtime.ogg", "static");rainboomsound:setVolume(0);rainboomsound:play();rainboomsound:stop();rainboomsound:setVolume(1)
 	
 	--music
+	--[[
 	overworldmusic = love.audio.newSource("sounds/overworld.ogg", "stream");overworldmusic:setLooping(true)
 	undergroundmusic = love.audio.newSource("sounds/underground.ogg", "stream");undergroundmusic:setLooping(true)
 	castlemusic = love.audio.newSource("sounds/castle.ogg", "stream");castlemusic:setLooping(true)
@@ -713,14 +720,14 @@ function love.load()
 	castlemusicfast = love.audio.newSource("sounds/castle-fast.ogg", "stream");castlemusicfast:setLooping(true)
 	underwatermusicfast = love.audio.newSource("sounds/underwater-fast.ogg", "stream");underwatermusicfast:setLooping(true)
 	starmusicfast = love.audio.newSource("sounds/starmusic-fast.ogg", "stream");starmusicfast:setLooping(true)
+	]]
 	
 	soundlist = {jumpsound, jumpbigsound, stompsound, shotsound, blockhitsound, blockbreaksound, coinsound, pipesound, boomsound, mushroomappearsound, mushroomeatsound, shrinksound, deathsound, gameoversound,
 				fireballsound, oneupsound, levelendsound, castleendsound, scoreringsound, intermissionsound, firesound, bridgebreaksound, bowserfallsound, vinesound, swimsound, rainboomsoud, 
-				portal1opensound, portal2opensound, portalentersound, portalfizzlesound, lowtime, overworldmusic, undergroundmusic, castlemusic, underwatermusic, starmusic, princessmusic, overworldmusicfast, 
-				undergroundmusicfast, castlemusicfast, underwatermusicfast, starmusicfast, princessmusicfast, konamisound, pausesound, stabsound, bulletbillsound}
+				portal1opensound, portal2opensound, portalentersound, portalfizzlesound, lowtime, konamisound, pausesound, stabsound, bulletbillsound}
 	
-	musiclist = {overworldmusic, undergroundmusic, castlemusic, underwatermusic, starmusic}
-	musiclistfast = {overworldmusicfast, undergroundmusicfast, castlemusicfast, underwatermusicfast, starmusicfast}
+	-- musiclist = {overworldmusic, undergroundmusic, castlemusic, underwatermusic, starmusic}
+	-- musiclistfast = {overworldmusicfast, undergroundmusicfast, castlemusicfast, underwatermusicfast, starmusicfast}
 	
 	musici = 2
 	
@@ -728,10 +735,17 @@ function love.load()
 	shaders:set(1, shaderlist[currentshaderi1])
 	shaders:set(2, shaderlist[currentshaderi2])
 	
+	for i, v in pairs(dlclist) do
+		delete_mappack(v)
+	end
+	
 	intro_load()
 end
 
 function love.update(dt)
+	if music then
+		music:update()
+	end
 	dt = math.min(0.01666667, dt)
 	
 	--speed
@@ -750,6 +764,7 @@ function love.update(dt)
 			for i, v in pairs(soundlist) do
 				v:setPitch( speed )
 			end
+			music.pitch = speed
 			love.audio.setVolume(volume)
 		else
 			love.audio.setVolume(0)
@@ -770,7 +785,7 @@ function love.update(dt)
 		return
 	end
 	
-	netplay_update(dt)
+	--netplay_update(dt)
 	keyprompt_update()
 	
 	if gamestate == "menu" or gamestate == "mappackmenu" or gamestate == "onlinemenu" or gamestate == "options" then
@@ -799,10 +814,6 @@ function love.draw()
 		game_draw()
 	elseif gamestate == "intro" then
 		intro_draw()
-	end
-	
-	for x = 1, math.ceil(width) do
-		--love.graphics.draw(scanlineimg, (x-1)*16*scale, 0, 0, scale, scale)
 	end
 	
 	shaders:postdraw()
@@ -853,7 +864,10 @@ function saveconfig()
 	end
 	
 	for i = 1, #mariohats do
-		s = s .. "mariohats:" .. i .. ":"
+		s = s .. "mariohats:" .. i
+		if #mariohats[i] > 0 then
+			s = s .. ":"
+		end
 		for j = 1, #mariohats[i] do
 			s = s .. mariohats[i][j]
 			if j == #mariohats[i] then
@@ -861,6 +875,10 @@ function saveconfig()
 			else
 				s = s .. ","
 			end
+		end
+		
+		if #mariohats[i] == 0 then
+			s = s .. ";"
 		end
 	end
 	
@@ -880,6 +898,24 @@ function saveconfig()
 	
 	if gamefinished then
 		s = s .. "gamefinished;"
+	end
+	
+	--reached worlds
+	for i, v in pairs(reachedworlds) do
+		s = s .. "reachedworlds:" .. i .. ":"
+		for j = 1, 8 do
+			if v[j] then
+				s = s .. 1
+			else
+				s = s .. 0
+			end
+			
+			if j == 8 then
+				s = s .. ";"
+			else
+				s = s .. ","
+			end
+		end
 	end
 	
 	love.filesystem.write("options.txt", s)
@@ -907,7 +943,7 @@ function loadconfig()
 			for j = 1, #s3 do
 				s4 = s3[j]:split("-")
 				controls[tonumber(s2[2])][s4[1]] = {}
-				for k = 2, #s3[4]+1 do
+				for k = 2, #s4 do
 					if tonumber(s4[k]) ~= nil then
 						controls[tonumber(s2[2])][s4[1]][k-1] = tonumber(s4[k])
 					else
@@ -932,12 +968,20 @@ function loadconfig()
 			portalhues[tonumber(s2[2])] = {tonumber(s3[1]), tonumber(s3[2])}
 		
 		elseif s2[1] == "mariohats" then
-			if mariohats[tonumber(s2[2])] == nil then
-				mariohats[tonumber(s2[2])] = {}
-			end
-			s3 = s2[3]:split(",")
-			for i = 1, #s3 do
-				mariohats[tonumber(s2[2])][i] = tonumber(s3[i])
+			local playerno = tonumber(s2[2])
+			mariohats[playerno] = {}
+			
+			if s2[3] == "mariohats" then --SAVING WENT WRONG OMG
+			
+			elseif s2[3] then
+				s3 = s2[3]:split(",")
+				for i = 1, #s3 do
+					local hatno = tonumber(s3[i])
+					if hatno > hatcount then
+						hatno = hatcount
+					end
+					mariohats[playerno][i] = hatno
+				end
 			end
 			
 		elseif s2[1] == "scale" then
@@ -968,6 +1012,14 @@ function loadconfig()
 			gamefinished = true
 		elseif s2[1] == "vsync" then
 			vsync = true
+		elseif s2[1] == "reachedworlds" then
+			reachedworlds[s2[2]] = {}
+			local s3 = s2[3]:split(",")
+			for i = 1, #s3 do
+				if tonumber(s3[i]) == 1 then
+					reachedworlds[s2[2]][i] = true
+				end
+			end
 		end
 	end
 	
@@ -1019,8 +1071,8 @@ function defaultconfig()
 		controls[i]["aimy"] = {"joy", i-1, "axe", 4, "neg"}
 		controls[i]["portal1"] = {"joy", i-1, "but", 5}
 		controls[i]["portal2"] = {"joy", i-1, "but", 6}
-		controls[i]["reload"] = {""}
-		controls[i]["use"] = {""}
+		controls[i]["reload"] = {"joy", i-1, "but", 4}
+		controls[i]["use"] = {"joy", i-1, "but", 2}
 	end
 	-------------------
 	-- PORTAL COLORS --
@@ -1030,7 +1082,7 @@ function defaultconfig()
 	portalcolor = {}
 	for i = 1, 4 do
 		local players = 4
-		portalhues[i] = {(i-1)*(1/players), (i-1)*(1/players)+0.3/players}
+		portalhues[i] = {(i-1)*(1/players), (i-1)*(1/players)+0.5/players}
 		portalcolor[i] = {getrainbowcolor(portalhues[i][1]), getrainbowcolor(portalhues[i][2])}
 	end
 	
@@ -1070,17 +1122,25 @@ function defaultconfig()
 	volume = 1
 	mappack = "smb"
 	vsync = false
+	
+	reachedworlds = {}
 end
 
 function suspendgame()
 	local s = ""
+	if marioworld == "M" then
+		marioworld = 8
+		mariolevel = 4
+	end
 	s = s .. "world/" .. marioworld .. "|"
 	s = s .. "level/" .. mariolevel .. "|"
 	s = s .. "coincount/" .. mariocoincount .. "|"
 	s = s .. "score/" .. marioscore .. "|"
 	s = s .. "players/" .. players .. "|"
 	for i = 1, players do
-		s = s .. "lives/" .. i .. "/" .. mariolives[i] .. "|"
+		if mariolivecount ~= false then
+			s = s .. "lives/" .. i .. "/" .. mariolives[i] .. "|"
+		end
 		if objects["player"][i] then
 			s = s .. "size/" .. i .. "/" .. objects["player"][i].size .. "|"
 		else
@@ -1118,7 +1178,7 @@ function continuegame()
 			marioscore = tonumber(split2[2])
 		elseif split2[1] == "players" then
 			players = tonumber(split2[2])
-		elseif split2[1] == "lives" then
+		elseif split2[1] == "lives" and mariolivecount ~= false then
 			mariolives[tonumber(split2[2])] = tonumber(split2[3])
 		elseif split2[1] == "size" then
 			mariosizes[tonumber(split2[2])] = tonumber(split2[3])
@@ -1130,11 +1190,24 @@ function continuegame()
 	love.filesystem.remove("suspend.txt")
 end
 
-function changescale(s)
+function changescale(s, fullscreen)
 	scale = s
+	
+	if fullscreen then
+		fullscreen = true
+		scale = 2
+		love.graphics.setMode(800, 600, fullscreen, vsync, fsaa)
+	end
+	
 	uispace = math.floor(width*16*scale/4)
 	love.graphics.setMode(width*16*scale, 224*scale, fullscreen, vsync, fsaa) --27x14 blocks (15 blocks actual height)
-	shaders:refresh()
+	
+	gamewidth = love.graphics.getWidth()
+	gameheight = love.graphics.getHeight()
+	
+	if shaders then
+		shaders:refresh()
+	end
 end
 
 function love.keypressed(key, unicode)
@@ -1147,6 +1220,10 @@ function love.keypressed(key, unicode)
 		if v:keypress(key) then
 			return
 		end
+	end
+	
+	if key == "f12" then
+		love.mouse.setGrab(not love.mouse.isGrabbed())
 	end
 	
 	if gamestate == "menu" or gamestate == "mappackmenu" or gamestate == "onlinemenu" or gamestate == "options" then
@@ -1381,5 +1458,105 @@ function love.focus(f)
 	if not f and gamestate == "game"and not editormode and not levelfinished and not everyonedead  then
 		pausemenuopen = true
 		love.audio.pause()
+	end
+end
+
+function openSaveFolder(subfolder) --By Slime
+	local path = love.filesystem.getSaveDirectory()
+	path = subfolder and path.."/"..subfolder or path
+	
+	local cmdstr
+	local successval = 0
+	
+	if os.getenv("WINDIR") then -- lolwindows
+		--cmdstr = "Explorer /root,%s"
+		if path:match("LOVE") then --hardcoded to fix ISO characters in usernames and made sure release mode doesn't mess anything up -saso
+			cmdstr = "Explorer %%appdata%%\\LOVE\\mari0"
+		else
+			cmdstr = "Explorer %%appdata%%\\mari0"
+		end
+		path = path:gsub("/", "\\")
+		successval = 1
+	elseif os.getenv("HOME") then
+		if path:match("/Library/Application Support") then -- OSX
+			cmdstr = "open \"%s\""
+		else -- linux?
+			cmdstr = "xdg-open \"%s\""
+		end
+	end
+	
+	-- returns true if successfully opened folder
+	return cmdstr and os.execute(cmdstr:format(path)) == successval
+end
+
+function getupdate()
+	local onlinedata, code = http.request("http://server.stabyourself.net/mari0/?mode=mappacks")
+	
+	if code ~= 200 then
+		return false
+	elseif not onlinedata then
+		return false
+	end
+	
+	local latestversion
+	
+	local split1 = onlinedata:split("<")
+	for i = 2, #split1 do
+		local split2 = split1[i]:split(">")
+		if split2[1] == "latestversion" then
+			latestversion = tonumber(split2[2])
+		end
+	end
+	
+	if latestversion and latestversion > marioversion then
+		return true
+	end
+	return false
+end
+
+function properprint(s, x, y)
+	local startx = x
+	for i = 1, string.len(tostring(s)) do
+		local char = string.sub(s, i, i)
+		if char == "|" then
+			x = startx-((i)*8)*scale
+			y = y + 10*scale
+		elseif fontquads[char] then
+			love.graphics.drawq(fontimage, fontquads[char], x+((i-1)*8)*scale, y, 0, scale, scale)
+		end
+	end
+end
+
+function loadcustombackground()
+	local i = 1
+	custombackgroundimg = {}
+	custombackgroundwidth = {}
+	custombackgroundheight = {}
+	--try to load map specific background first
+	local levelstring = marioworld .. "-" .. mariolevel
+	if mariosublevel ~= 0 then
+		levelstring = levelstring .. "_" .. mariosublevel
+	end
+	
+	while love.filesystem.exists("mappacks/" .. mappack .. "/" .. levelstring .. "background" .. i .. ".png") do
+		custombackgroundimg[i] = love.graphics.newImage("mappacks/" .. mappack .. "/" .. levelstring .. "background" .. i .. ".png")
+		custombackgroundwidth[i] = custombackgroundimg[i]:getWidth()/16
+		custombackgroundheight[i] = custombackgroundimg[i]:getHeight()/16
+		i = i +1
+	end
+	
+	if #custombackgroundimg == 0 then
+		while love.filesystem.exists("mappacks/" .. mappack .. "/background" .. i .. ".png") do
+			custombackgroundimg[i] = love.graphics.newImage("mappacks/" .. mappack .. "/background" .. i .. ".png")
+			custombackgroundwidth[i] = custombackgroundimg[i]:getWidth()/16
+			custombackgroundheight[i] = custombackgroundimg[i]:getHeight()/16
+			i = i +1
+		end
+	end
+	
+	if #custombackgroundimg == 0 then
+		custombackgroundimg[i] = love.graphics.newImage("graphics/SMB/portalbackground.png")
+		custombackgroundwidth[i] = custombackgroundimg[i]:getWidth()/16
+		custombackgroundheight[i] = custombackgroundimg[i]:getHeight()/16
 	end
 end

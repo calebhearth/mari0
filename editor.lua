@@ -26,13 +26,13 @@ function editor_load()
 	--MAIN
 	guielements["autoscrollcheckbox"] = guielement:new("checkbox", 291, 65, toggleautoscroll, autoscroll)
 	guielements["backgrounddropdown"] = guielement:new("dropdown", 17, 85, 6, changebackground, background, "blue", "black", "water")
-	guielements["musicdropdown"] = guielement:new("dropdown", 17, 110, 11, changemusic, musici, "none", "overworld", "underground", "castle", "underwater", "star")
+	guielements["musicdropdown"] = guielement:new("dropdown", 17, 110, 11, changemusic, musici, "none", "overworld", "underground", "castle", "underwater", "star", "custom")
 	guielements["spritesetdropdown"] = guielement:new("dropdown", 17, 135, 11, changespriteset, spriteset, "overworld", "underground", "castle", "underwater")
 	guielements["timelimitdecrease"] = guielement:new("button", 17, 160, "{", decreasetimelimit, 0)
 	guielements["timelimitincrease"] = guielement:new("button", 31 + string.len(mariotimelimit)*8, 160, "}", increasetimelimit, 0)
-	guielements["mapwidthdecrease"] = guielement:new("button", 268, 163, "{", nil, 0)
-	guielements["mapwidthincrease"] = guielement:new("button", 264, 163, "}", nil, 0)
-	guielements["mapwidthapply"] = guielement:new("button", 320, 163, "apply", applymapwidth, 0)
+	guielements["mapwidthdecrease"] = guielement:new("button", 268, 178, "{", nil, 0)
+	guielements["mapwidthincrease"] = guielement:new("button", 264, 178, "}", nil, 0)
+	guielements["mapwidthapply"] = guielement:new("button", 320, 178, "apply", applymapwidth, 0)
 	guielements["savebutton"] = guielement:new("button", 10, 200, "save", savelevel, 2)
 	guielements["menubutton"] = guielement:new("button", 54, 200, "return to menu", menu_load, 2)
 	guielements["testbutton"] = guielement:new("button", 178, 200, "test level", test_level, 2)
@@ -43,7 +43,9 @@ function editor_load()
 	guielements["warpzonecheckbox"] = guielement:new("checkbox", 200, 95, togglewarpzone, haswarpzone)
 	guielements["underwatercheckbox"] = guielement:new("checkbox", 200, 110, toggleunderwater, underwater)
 	guielements["bonusstagecheckbox"] = guielement:new("checkbox", 200, 125, togglebonusstage, bonusstage)
-	guielements["portalbackgroundcheckbox"] = guielement:new("checkbox", 200, 140, toggleportalbackground, portalbackground)
+	guielements["custombackgroundcheckbox"] = guielement:new("checkbox", 200, 140, togglecustombackground, custombackground)
+	
+	guielements["scrollfactorscrollbar"] = guielement:new("scrollbar", 298, 154, 100, 35, 11, reversescrollfactor(), "hor")
 	
 	--TILES
 	guielements["tilesall"] = guielement:new("button", 70, 20, "all", tilesall, 2)
@@ -52,7 +54,7 @@ function editor_load()
 	guielements["tilescustom"] = guielement:new("button", 193, 20, "custom", tilescustom, 2)
 	guielements["tilesentities"] = guielement:new("button", 268, 20, "entities", tilesentities, 2)
 	
-	guielements["tilesscrollbar"] = guielement:new("scrollbar", 381, 37, 167, 15, 40)
+	guielements["tilesscrollbar"] = guielement:new("scrollbar", 381, 37, 167, 15, 40, 0, "ver")
 	
 	--TOOLS
 	guielements["linkbutton"] = guielement:new("button", 5, 22, "link tool|to link testing equipment, drag a line from the|red devices to a yellow activator to turn them|green and connected. insert zelda joke here.", linkbutton, 2, false, 4, 383)
@@ -61,6 +63,9 @@ function editor_load()
 	guielements["portalbutton"] = guielement:new("button", 5, 71, "portal gun|for testing purposes, use this to shoot portals!", portalbutton, 2, false, 2, 383)
 	guielements["portalbutton"].bordercolor = {0, 0, 255}
 	guielements["portalbutton"].bordercolorhigh = {127, 127, 255}
+	
+	guielements["livesdecrease"] = guielement:new("button", 198, 104, "{", livesdecrease, 0)
+	guielements["livesincrease"] = guielement:new("button", 194, 104, "}", livesincrease, 0)
 	
 	--MAPS
 	guielements["savebutton2"] = guielement:new("button", 10, 140, "save", savelevel, 2)
@@ -71,16 +76,18 @@ function editor_load()
 	local mappackname = ""
 	local mappackauthor = ""
 	local mappackdescription = ""
-	local data = love.filesystem.read("mappacks/" .. mappack .. "/settings.txt")
-	local split1 = data:split("\n")
-	for i = 1, #split1 do
-		local split2 = split1[i]:split("=")
-		if split2[1] == "name" then
-			mappackname = split2[2]:lower()
-		elseif split2[1] == "author" then
-			mappackauthor = split2[2]:lower()
-		elseif split2[1] == "description" then
-			mappackdescription = split2[2]:lower()
+	if love.filesystem.exists("mappacks/" .. mappack .. "/settings.txt") then
+		local data = love.filesystem.read("mappacks/" .. mappack .. "/settings.txt")
+		local split1 = data:split("\n")
+		for i = 1, #split1 do
+			local split2 = split1[i]:split("=")
+			if split2[1] == "name" then
+				mappackname = split2[2]:lower()
+			elseif split2[1] == "author" then
+				mappackauthor = split2[2]:lower()
+			elseif split2[1] == "description" then
+				mappackdescription = split2[2]:lower()
+			end
 		end
 	end
 	
@@ -190,6 +197,7 @@ function editor_update(dt)
 				end
 			end
 		end
+		updatescrollfactor()
 	elseif editorstate == "tiles" then
 		tilesoffset = guielements["tilesscrollbar"].value * tilescrollbarheight * scale
 	end
@@ -359,11 +367,7 @@ function editor_draw()
 			love.graphics.setColor(255, 255, 255)
 			properprint("minimap", 3*scale, 21*scale)
 			love.graphics.rectangle("fill", minimapx*scale, minimapy*scale, 394*scale, 34*scale)
-			if portalbackground then
-				love.graphics.setColor(240, 240, 240)
-			else
-				love.graphics.setColor(unpack(backgroundcolor[background]))
-			end
+			love.graphics.setColor(unpack(backgroundcolor[background]))
 			love.graphics.rectangle("fill", (minimapx+2)*scale, (minimapy+2)*scale, 390*scale, 30*scale)
 			
 			local lmap = map
@@ -396,8 +400,8 @@ function editor_draw()
 				guielements["mapwidthdecrease"]:draw()
 				guielements["mapwidthincrease"]:draw()
 				guielements["mapwidthapply"]:draw()
-				properprint("current mapwidth: " .. mapwidth, 160*scale, 155*scale)
-				properprint("new mapwidth:  " .. targetmapwidth, 160*scale, 165*scale)
+				properprint("current mapwidth: " .. mapwidth, 160*scale, 170*scale)
+				properprint("new mapwidth:  " .. targetmapwidth, 160*scale, 180*scale)
 				guielements["savebutton"]:draw()
 				guielements["menubutton"]:draw()
 				guielements["testbutton"]:draw()
@@ -416,13 +420,30 @@ function editor_draw()
 				guielements["warpzonecheckbox"]:draw()
 				guielements["underwatercheckbox"]:draw()
 				guielements["bonusstagecheckbox"]:draw()
-				guielements["portalbackgroundcheckbox"]:draw()
+				guielements["custombackgroundcheckbox"]:draw()
 				
+				if custombackground then
+					love.graphics.setColor(255, 255, 255, 255)
+				else
+					love.graphics.setColor(150, 150, 150, 255)
+				end
+				properprint("scrollfactor", 199*scale, 156*scale)
+				
+				guielements["scrollfactorscrollbar"]:draw()
+				if custombackground then
+					love.graphics.setColor(255, 255, 255, 255)
+				else
+					love.graphics.setColor(150, 150, 150, 255)
+				end
+				properprint(formatscrollnumber(scrollfactor), (guielements["scrollfactorscrollbar"].x+1+guielements["scrollfactorscrollbar"].xrange*guielements["scrollfactorscrollbar"].value)*scale, 156*scale)
+				
+				love.graphics.setColor(255, 255, 255, 255)
+					
 				properprint("intermission", 210*scale, 81*scale)
 				properprint("has warpzone", 210*scale, 96*scale)
 				properprint("underwater", 210*scale, 111*scale)
 				properprint("bonusstage", 210*scale, 126*scale)
-				properprint("portal background", 210*scale, 141*scale)
+				properprint("custom background", 210*scale, 141*scale)
 			end
 		elseif editorstate == "maps" then
 			for i = 1, 8 do
@@ -446,6 +467,16 @@ function editor_draw()
 			guielements["editauthor"]:draw()
 			guielements["editdescription"]:draw()
 			guielements["savesettings"]:draw()
+			
+			properprint("lives:", 150*scale, 106*scale)
+			guielements["livesincrease"]:draw()
+			if mariolivecount == false then
+				properprint("inf", 210*scale, 106*scale)
+			else
+				properprint(mariolivecount, 210*scale, 106*scale)
+			end
+			
+			guielements["livesdecrease"]:draw()
 		end
 	end
 end
@@ -481,7 +512,8 @@ function maintab()
 	guielements["warpzonecheckbox"].active = true
 	guielements["underwatercheckbox"].active = true
 	guielements["bonusstagecheckbox"].active = true
-	guielements["portalbackgroundcheckbox"].active = true
+	guielements["custombackgroundcheckbox"].active = true
+	guielements["scrollfactorscrollbar"].active = true
 end
 
 function tilestab()
@@ -530,6 +562,9 @@ function toolstab()
 	guielements["editauthor"].active = true
 	guielements["editdescription"].active = true
 	guielements["savesettings"].active = true
+	
+	guielements["livesdecrease"].active = true
+	guielements["livesincrease"].active = true
 end
 
 function mapstab()
@@ -700,6 +735,11 @@ function editoropen()
 	editormenuopen = true
 	targetmapwidth = mapwidth
 	guielements["mapwidthincrease"].x = 282 + string.len(targetmapwidth)*8
+	if mariolivecount == false then
+		guielements["livesincrease"].x = 212 + 24
+	else
+		guielements["livesincrease"].x = 212 + string.len(mariolivecount)*8
+	end
 	guirepeattimer = 0
 	getmaps()
 	
@@ -827,13 +867,25 @@ function editor_mousepressed(x, y, button)
 		currenttile = map[cox][coy][1]
 		
 	elseif button == "wu" then
-		if currenttile > 1 then
-			currenttile = currenttile - 1
+		if editormenuopen then
+		else
+			if currenttile > 1 then
+				currenttile = currenttile - 1
+			end
 		end
 		
 	elseif button == "wd" then
-		if currenttile < tilecount1 then
-			currenttile = currenttile + 1
+		if editormenuopen then
+		else
+			if editentities then
+				if currenttile < #entitylist then
+					currenttile = currenttile + 1
+				end
+			else
+				if currenttile < smbtilecount+portaltilecount+customtilecount then
+					currenttile = currenttile + 1
+				end
+			end
 		end
 		
 	elseif button == "r" then
@@ -900,7 +952,7 @@ function editor_mousepressed(x, y, button)
 end
 
 function rightclickmenuclick(i)
-	if i > 0 then
+	if i > 1 then
 		map[rightclickmenucox][rightclickmenucoy][3] = rightclickvalues[rightclickmenutile][i]
 	end
 end
@@ -914,37 +966,39 @@ function editor_mousereleased(x, y, button)
 				local startx, starty = linktoolX, linktoolY
 				local endx, endy = getMouseTile(x, y+8*scale)
 				
-				local r = map[endx][endy]
-				
-				--LIST OF NUMBERS THAT ARE ACCEPTED AS INPUTS (buttons, laserdetectors)
-				if #r > 1 and tablecontains( outputsi, r[2] ) then
-					r = map[startx][starty]
+				if startx ~= endx or starty ~= endy then
+					local r = map[endx][endy]
 					
-					local i = 1
-					while r[i] ~= "link" and i <= #r do
-						i = i + 1
+					--LIST OF NUMBERS THAT ARE ACCEPTED AS INPUTS (buttons, laserdetectors)
+					if #r > 1 and tablecontains( outputsi, r[2] ) then
+						r = map[startx][starty]
+						
+						local i = 1
+						while r[i] ~= "link" and i <= #r do
+							i = i + 1
+						end
+						
+						map[startx][starty][i] = "link"
+						map[startx][starty][i+1] = endx
+						map[startx][starty][i+2] = endy
 					end
 					
-					map[startx][starty][i] = "link"
-					map[startx][starty][i+1] = endx
-					map[startx][starty][i+2] = endy
-				end
-				
-				linktoolX, linktoolY = nil, nil
-				
-				--Update links
-				for i, v in pairs(objects) do
-					for j, w in pairs(v) do
-						if w.outtable then
-							w.outtable = {}
+					linktoolX, linktoolY = nil, nil
+					
+					--Update links
+					for i, v in pairs(objects) do
+						for j, w in pairs(v) do
+							if w.outtable then
+								w.outtable = {}
+							end
 						end
 					end
-				end
-				
-				for i, v in pairs(objects) do
-					for j, w in pairs(v) do
-						if w.link then
-							w:link()
+					
+					for i, v in pairs(objects) do
+						for j, w in pairs(v) do
+							if w.link then
+								w:link()
+							end
 						end
 					end
 				end
@@ -1010,13 +1064,18 @@ function togglebonusstage(var)
 	guielements["bonusstagecheckbox"].var = bonusstage
 end
 
-function toggleportalbackground(var)
+function togglecustombackground(var)
 	if var ~= nil then
-		portalbackground = var
+		custombackground = var
 	else
-		portalbackground = not portalbackground
+		custombackground = not custombackground
 	end
-	guielements["portalbackgroundcheckbox"].var = portalbackground
+	
+	if custombackground then
+		loadcustombackground()
+	end
+	
+	guielements["custombackgroundcheckbox"].var = custombackground
 end
 
 function changebackground(var)
@@ -1026,12 +1085,16 @@ function changebackground(var)
 end
 
 function changemusic(var)
-	if musici ~= 1 then
-		musiclist[musici-1]:stop()
+	if musici == 7 and custommusic then
+		music:stop(custommusic)
+	elseif musici ~= 1 then
+		music:stopIndex(musici-1)
 	end
 	musici = var
-	if musici ~= 1 then
-		playsound(musiclist[musici-1])
+	if musici == 7 and custommusic then
+		music:play(custommusic)
+	elseif musici ~= 1 then
+		music:playIndex(musici-1)
 	end
 	guielements["musicdropdown"].var = var
 end
@@ -1073,7 +1136,12 @@ function test_level()
 	testlevelworld = marioworld
 	testlevellevel = mariolevel
 	autoscroll = true
-	startlevel(marioworld .. "-" .. mariolevel)
+	checkpointx = false
+	if mariosublevel ~= 0 then
+		startlevel(marioworld .. "-" .. mariolevel .. "_" .. mariosublevel)
+	else
+		startlevel(marioworld .. "-" .. mariolevel)
+	end
 end
 
 function portalbutton()
@@ -1102,6 +1170,55 @@ function savesettings()
 	s = s .. "name=" .. guielements["edittitle"].value .. "\n"
 	s = s .. "author=" .. guielements["editauthor"].value .. "\n"
 	s = s .. "description=" .. guielements["editdescription"].value .. "\n"
+	if mariolivecount == false then
+		s = s .. "lives=0\n"
+	else
+		s = s .. "lives=" .. mariolivecount .. "\n"
+	end
+	
+	love.filesystem.mkdir( "mappacks" )
+	love.filesystem.mkdir( "mappacks/" .. mappack )
 	
 	love.filesystem.write("mappacks/" .. mappack .. "/settings.txt", s)
+end
+
+function livesdecrease()
+	if mariolivecount == false then
+		return
+	end
+	
+	mariolivecount = mariolivecount - 1
+	if mariolivecount == 0 then
+		mariolivecount = false
+		guielements["livesincrease"].x = 212 + 24
+	else
+		guielements["livesincrease"].x = 212 + string.len(mariolivecount)*8
+	end
+end
+
+function livesincrease()
+	if mariolivecount == false then
+		mariolivecount = 1
+	else
+		mariolivecount = mariolivecount + 1
+	end
+	guielements["livesincrease"].x = 212 + string.len(mariolivecount)*8
+end
+
+function updatescrollfactor()
+	scrollfactor = round((guielements["scrollfactorscrollbar"].value*3)^2, 2)
+end
+
+function reversescrollfactor()
+	return math.sqrt(scrollfactor)/3
+end
+
+function formatscrollnumber(i)
+	if string.len(i) == 1 then
+		return i .. ".00"
+	elseif string.len(i) == 3 then
+		return i .. "0"
+	else
+		return i
+	end
 end

@@ -42,6 +42,7 @@ function box:init(x, y)
 	self.falling = false
 	self.destroying = false
 	self.outtable = {}
+	self.portaledframe = false
 end
 
 function box:update(dt)
@@ -87,14 +88,16 @@ function box:update(dt)
 		self.x = self.parent.x+math.sin(-self.parent.pointingangle)*0.3
 		self.y = self.parent.y-math.cos(-self.parent.pointingangle)*0.3
 		
-		for h, u in pairs(emancipationgrills) do
-			if u.dir == "hor" then
-				if inrange(self.x+6/16, u.startx-1, u.endx, true) and inrange(u.y-14/16, oldy, self.y, true) then
-					self:emancipate(h)
-				end
-			else
-				if inrange(self.y+6/16, u.starty-1, u.endy, true) and inrange(u.x-14/16, oldx, self.x, true) then
-					self:emancipate(h)
+		if self.portaledframe == false then
+			for h, u in pairs(emancipationgrills) do
+				if u.dir == "hor" then
+					if inrange(self.x+6/16, u.startx-1, u.endx, true) and inrange(u.y-14/16, oldy, self.y, true) then
+						self:emancipate(h)
+					end
+				else
+					if inrange(self.y+6/16, u.starty-1, u.endy, true) and inrange(u.x-14/16, oldx, self.x, true) then
+						self:emancipate(h)
+					end
 				end
 			end
 		end
@@ -107,6 +110,8 @@ function box:update(dt)
 	if self.y > 17 then
 		self:destroy()
 	end
+	
+	self.portaledframe = false
 	
 	if self.destroying then
 		return true
@@ -149,6 +154,7 @@ function box:floorcollide(a, b)
 	end
 	
 	if a == "goomba" or a == "bulletbill" then
+		b:stomp()
 		addpoints(200, self.x, self.y)
 		playsound(stompsound)
 		self.falling = true
@@ -201,4 +207,8 @@ end
 function box:dropped()
 	self.parent = nil
 	self.active = true
+end
+
+function box:portaled()
+	self.portaledframe = true
 end

@@ -1,6 +1,7 @@
 local supported = love.graphics.isSupported and love.graphics.isSupported("canvas") and love.graphics.isSupported("pixeleffect")
 local supports_npo2 = love.graphics.isSupported and love.graphics.isSupported("npot") or false -- on the safe side
 if not supported then 
+	shaderssupported = false
 	print("post-processing shaders not supported")
 end
 

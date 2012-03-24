@@ -14,7 +14,6 @@ function hammerbro:init(x, y)
 	self.active = true
 	self.category = 20
 	self.mask = {true, false, false, false, false, true, false, false, false, true}
-	self.emancipatecheck = true
 	self.autodelete = true
 	self.gravity = 40
 	
@@ -208,7 +207,7 @@ function hammerbro:leftcollide(a, b)
 		end
 	elseif a == "bulletbill" then
 		self:shotted("right")
-	elseif a == "hammer" then
+	elseif a == "hammer" and b.killstuff then
 		self:shotted()
 	end
 	
@@ -224,7 +223,7 @@ function hammerbro:rightcollide(a, b)
 		end
 	elseif a == "bulletbill" then
 		self:shotted("left")
-	elseif a == "hammer" then
+	elseif a == "hammer" and b.killstuff then
 		self:shotted()
 	end
 	
@@ -240,7 +239,7 @@ function hammerbro:ceilcollide(a, b)
 		end
 	elseif a == "bulletbill" then
 		self:shotted("right")
-	elseif a == "hammer" then
+	elseif a == "hammer" and b.killstuff then
 		self:shotted()
 	end
 end
@@ -252,7 +251,7 @@ end
 function hammerbro:floorcollide(a, b)
 	if a == "bulletbill" then
 		self:shotted("right")
-	elseif a == "hammer" then
+	elseif a == "hammer" and b.killstuff then
 		self:shotted()
 	end
 end
@@ -261,6 +260,10 @@ function hammerbro:emancipate(a)
 	self:shotted()
 end
 
+function hammerbro:portaled()
+	self.jumping = false
+	self.mask[2] = false
+end
 
 -------------------------------
 hammer = class:new()
@@ -280,9 +283,16 @@ function hammer:init(x, y, dir)
 	self.static = false
 	self.active = true
 	self.category = 14
-	self.mask = {true, true, false, false, false, true, false, false, false, true, false, true, false, false, false, false, false, false, false, true}
+	self.mask = {	true,
+					true, false, false, false, true,
+					true, true, true, true, true,
+					true, false, true, true, true,
+					true, true, true, false, true,
+					true, true, true, true, true,
+					true, true, true, true, true}
 	self.emancipatecheck = true
 	self.gravity = hammergravity
+	self.autodelete = true
 	
 	--IMAGE STUFF
 	self.drawable = true
@@ -329,4 +339,8 @@ end
 
 function hammer:ceilcollide()
 	return false
+end
+
+function hammer:portaled()
+	self.killstuff = true
 end

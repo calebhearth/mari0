@@ -89,7 +89,7 @@ starjumpforce = 13
 staranimationdelay = 0.04
 mariostarblinkrate = 0.08 --/disco
 mariostarblinkrateslow = 0.16 --/disco
-mariostarduration = 10
+mariostarduration = 12
 mariostarrunout = 1 --subtracts, doesn't add.
 
 goombaspeed = 2
@@ -390,9 +390,14 @@ playercollisions = false
 scalefactor = 5
 gelcannondelay = 0.05
 gelcannonspeed = 30
+infinitetime = false
+infinitelives = false
 
 pausemenuoptions = {"resume", "suspend", "volume", "quit to", "quit to"}
 pausemenuoptions2 = {"", "", "", "menu", "desktop"}
 
 guirepeatdelay = 0.07
 mappackhorscrollrange = 220
+
+maximumbulletbills = 5
+coinblocktime = 4
